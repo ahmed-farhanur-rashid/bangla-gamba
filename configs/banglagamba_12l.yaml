@@ -1,0 +1,46 @@
+# BanglaGamba-12L | Mamba-3/GQA Hybrid | ~199M params
+# Spec: BanglaFM_Model_Implementation_Spec.md §1.2
+
+d_model: 1024
+n_layers: 12
+n_heads: 16
+n_kv_heads: 4
+d_head: 64
+d_ff: 2560                    # floor(2/3 * 4 * 1024 / 256) * 256
+vocab_size: 48000             # divisible by 128
+seq_len: 2048                 # fixed throughout training
+dropout: 0.0
+bias: false
+
+# Layer pattern: 1:1 interleaved, Mamba first, Attention last
+# M A M A M A M A M A M A
+layer_types:
+  - mamba
+  - attn
+  - mamba
+  - attn
+  - mamba
+  - attn
+  - mamba
+  - attn
+  - mamba
+  - attn
+  - mamba
+  - attn
+
+# Mamba-3 (SSD)
+mamba_d_state: 128            # Mamba-2/3 state dim (not Mamba-1's d_state=16)
+mamba_expand: 2               # d_inner = 2048
+mamba_headdim: 64             # 32 internal SSM heads
+mamba_ngroups: 1
+mamba_chunk_size: 64          # SSD chunked-scan size (64 for RTX 4070 Super shared mem)
+
+# RoPE (GQA layers only)
+rope_base: 10000.0
+rms_norm_eps: 1.0e-5
+
+# Stability (spec §6.1)
+qk_norm: true                 # per-head RMSNorm on Q/K before RoPE
+
+# Weight tying (saves ~49M params)
+tie_embeddings: true
