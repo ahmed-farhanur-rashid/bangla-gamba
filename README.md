@@ -1,4 +1,4 @@
-# BanglaGamba
+# Bangla-Gamba
 
 **A ~199M parameter Mamba-3 / GQA hybrid Bangla foundation model.**
 
