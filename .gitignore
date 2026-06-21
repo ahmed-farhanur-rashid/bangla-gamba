@@ -51,7 +51,7 @@ ehthumbs.db
 Desktop.ini
 
 # ── Private / Sensitive ─────────────────────────────────────
-donotupload/
+no_upload/
 secrets/
 *.env
 .env.*
