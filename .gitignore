@@ -57,6 +57,8 @@ secrets/
 .env.*
 credentials.*
 data/
+AGENTS.md
+context.md
 
 # ── Saved Artifacts (data, models, tokenizers, checkpoints) ─
 saved/

@@ -22,3 +22,10 @@ python scripts/build_corpus.py
 python scripts/clean_pipeline.py --input saved/data/final/banglagamba_corpus.jsonl --output saved/data/preprocessed/cleaned.jsonl
 python scripts/pretokenize_and_pack.py --input saved/data/preprocessed/cleaned.jsonl --output saved/data/pretokenized/
 Start with step 1 (downloads) any time you like.
+
+
+
+
+
+
+python scripts/data-scraper/cc_bd_harvest.py --crawl CC-MAIN-2026-22 --out saved/data/raw/cc_bangla/ --workers 8
