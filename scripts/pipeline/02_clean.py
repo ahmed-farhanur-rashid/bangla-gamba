@@ -1,7 +1,10 @@
 """
 BanglaGamba — Clean & Deduplicate
 ===================================
-Clean all saved/data/raw/*.jsonl → single merged file.
+Two-pass streaming approach:
+  Pass 1: Filter all raw/*.jsonl → temp filtered file (no memory buildup)
+  Pass 2: MinHash dedup the temp file → final output
+
 Delete saved/data/raw/ after.
 
 Usage:
@@ -24,6 +27,7 @@ from tqdm import tqdm
 RAW_DIR = Path("saved/data/raw")
 CLEANED_DIR = Path("saved/data/cleaned")
 OUTPUT_PATH = CLEANED_DIR / "corpus_cleaned.jsonl"
+TEMP_PATH = CLEANED_DIR / ".filtered_tmp.jsonl"
 
 
 def normalize_text(text: str) -> str:
@@ -46,13 +50,11 @@ def should_skip_quality(text: str, language_region: str) -> bool:
     if language_region != "BD_WB_mix":
         return False
 
-    # ASCII ratio check
     if len(text) > 0:
         ascii_count = sum(1 for ch in text if ord(ch) < 128)
         if ascii_count / len(text) > 0.45:
             return True
 
-    # Punctuation ratio check
     if len(text) > 0:
         punct_count = sum(1 for ch in text if ch.isascii() and not ch.isalnum() and not ch.isspace())
         if punct_count / len(text) > 0.30:
@@ -61,10 +63,106 @@ def should_skip_quality(text: str, language_region: str) -> bool:
     return False
 
 
+def count_lines(path: Path) -> int:
+    """Fast line count using binary read."""
+    count = 0
+    with open(path, "rb") as f:
+        for _ in f:
+            count += 1
+    return count
+
+
+def pass_filter(raw_files: list[Path], total: int) -> tuple[int, int, int]:
+    """Pass 1: Stream raw files, filter, write to temp file. Returns counts."""
+    kept = 0
+    length_rejected = 0
+    quality_rejected = 0
+
+    with open(TEMP_PATH, "w") as fout:
+        with tqdm(total=total, desc="Filtering", unit="docs", unit_scale=True) as bar:
+            for raw_file in raw_files:
+                with open(raw_file, "r") as f:
+                    for line in f:
+                        bar.update(1)
+                        try:
+                            doc = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+
+                        text = doc.get("text", "")
+                        source_type = doc.get("source_type", "")
+                        language_region = doc.get("language_region", "")
+
+                        # Length filter
+                        min_words = 10 if source_type == "parallel_bn_en" else 20
+                        if len(text.split()) < min_words:
+                            length_rejected += 1
+                            continue
+
+                        # Unicode normalization
+                        text = normalize_text(text)
+                        doc["text"] = text
+
+                        # Quality filter (Bangla-script only)
+                        if should_skip_quality(text, language_region):
+                            quality_rejected += 1
+                            continue
+
+                        fout.write(json.dumps(doc, ensure_ascii=False) + "\n")
+                        kept += 1
+
+    return kept, length_rejected, quality_rejected
+
+
+def pass_dedup(total_filtered: int) -> tuple[int, int]:
+    """Pass 2: Stream temp file, MinHash dedup, write final output. Returns (kept, rejected)."""
+    try:
+        from datasketch import MinHash, MinHashLSH
+    except ImportError:
+        print("[clean] WARNING: datasketch not installed, skipping deduplication")
+        # No dedup — just rename temp to output
+        TEMP_PATH.rename(OUTPUT_PATH)
+        return total_filtered, 0
+
+    print("[clean] Running MinHash deduplication (num_perm=128, threshold=0.80)...")
+    lsh = MinHashLSH(threshold=0.80, num_perm=128)
+    dedup_rejected = 0
+    doc_id = 0
+
+    def get_minhash(text: str) -> MinHash:
+        m = MinHash(num_perm=128)
+        words = text.split()
+        for i in range(len(words) - 4):
+            gram = " ".join(words[i:i + 5])
+            m.update(gram.encode("utf-8"))
+        return m
+
+    with open(TEMP_PATH, "r") as fin, open(OUTPUT_PATH, "w") as fout:
+        with tqdm(total=total_filtered, desc="Dedup     ", unit="docs", unit_scale=True) as bar:
+            for line in fin:
+                bar.update(1)
+                try:
+                    doc = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                text = doc["text"]
+                mh = get_minhash(text)
+                if lsh.query(mh):
+                    dedup_rejected += 1
+                    continue
+
+                lsh.insert(text[:64], mh)
+                doc["doc_id"] = doc_id
+                doc_id += 1
+                fout.write(json.dumps(doc, ensure_ascii=False) + "\n")
+
+    return doc_id, dedup_rejected
+
+
 def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
     CLEANED_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Find all raw JSONL files
     raw_files = sorted(RAW_DIR.glob("*.jsonl"))
     if not raw_files:
         print("[clean] No raw JSONL files found in saved/data/raw/")
@@ -74,7 +172,7 @@ def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
     for f in raw_files:
         print(f"        {f.name}")
 
-    # Count total lines for progress bar
+    # Count total lines
     print("[clean] Counting total documents...")
     total = 0
     for f in raw_files:
@@ -82,95 +180,29 @@ def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
             for _ in fh:
                 total += 1
 
-    # Stage 1-3: Filter
-    print("[clean] Filtering documents...")
-    kept = 0
-    length_rejected = 0
-    quality_rejected = 0
-    docs = []
-
-    with tqdm(total=total, desc="Cleaning", unit="docs", unit_scale=True) as bar:
-        for raw_file in raw_files:
-            with open(raw_file, "r") as f:
-                for line in f:
-                    bar.update(1)
-                    try:
-                        doc = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-
-                    text = doc.get("text", "")
-                    source_type = doc.get("source_type", "")
-                    language_region = doc.get("language_region", "")
-
-                    # Stage 1: Length filter
-                    min_words = 10 if source_type == "parallel_bn_en" else 20
-                    if len(text.split()) < min_words:
-                        length_rejected += 1
-                        continue
-
-                    # Stage 2: Unicode normalization
-                    text = normalize_text(text)
-                    doc["text"] = text
-
-                    # Stage 3: Quality filter (Bangla-script only)
-                    if should_skip_quality(text, language_region):
-                        quality_rejected += 1
-                        continue
-
-                    docs.append(doc)
-                    kept += 1
-
+    # Pass 1: Filter → temp file
+    print("[clean] Pass 1: Filtering documents...")
+    kept, length_rejected, quality_rejected = pass_filter(raw_files, total)
     tqdm.write(f"  After filtering: {kept:,} / {total:,}")
 
-    # Stage 4: MinHash deduplication
-    dedup_rejected = 0
-    if not skip_dedup:
-        try:
-            from datasketch import MinHash, MinHashLSH
-            print("[clean] Running MinHash deduplication (num_perm=128, threshold=0.80)...")
+    # Pass 2: Dedup → final output
+    if skip_dedup:
+        print("[clean] Skipping dedup (--skip-dedup)")
+        TEMP_PATH.rename(OUTPUT_PATH)
+        final_count = kept
+        dedup_rejected = 0
+    else:
+        print("[clean] Pass 2: Deduplicating...")
+        final_count, dedup_rejected = pass_dedup(kept)
+        tqdm.write(f"  After dedup: {final_count:,}")
 
-            lsh = MinHashLSH(threshold=0.80, num_perm=128)
-            unique_docs = []
-
-            def get_minhash(text: str) -> MinHash:
-                m = MinHash(num_perm=128)
-                words = text.split()
-                for i in range(len(words) - 4):
-                    gram = " ".join(words[i:i + 5])
-                    m.update(gram.encode("utf-8"))
-                return m
-
-            with tqdm(total=len(docs), desc="Dedup     ", unit="docs", unit_scale=True) as bar:
-                for doc in docs:
-                    text = doc["text"]
-                    mh = get_minhash(text)
-                    if lsh.query(mh):
-                        dedup_rejected += 1
-                    else:
-                        lsh.insert(text[:64], mh)
-                        unique_docs.append(doc)
-                    bar.update(1)
-
-            docs = unique_docs
-            tqdm.write(f"  After dedup: {len(docs):,}")
-        except ImportError:
-            print("[clean] WARNING: datasketch not installed, skipping deduplication")
-
-    # Stage 5: Shuffle and write
-    print("[clean] Shuffling and writing...")
-    import random
-    random.seed(42)
-    random.shuffle(docs)
-
-    with open(OUTPUT_PATH, "w") as f:
-        for i, doc in enumerate(docs):
-            doc["doc_id"] = i
-            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+    # Clean up temp file
+    if TEMP_PATH.exists():
+        TEMP_PATH.unlink()
 
     output_size = OUTPUT_PATH.stat().st_size / (1024 ** 3)
 
-    # Stage 6: Delete raw
+    # Delete raw
     if not no_delete_raw:
         raw_size = sum(f.stat().st_size for f in RAW_DIR.rglob("*") if f.is_file()) / (1024 ** 3)
         shutil.rmtree(RAW_DIR)
@@ -183,7 +215,7 @@ def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
     print(f"Length rejected:      {length_rejected:,}")
     print(f"Quality rejected:     {quality_rejected:,}")
     print(f"Dedup rejected:       {dedup_rejected:,}")
-    print(f"Kept:                 {len(docs):,}  ({len(docs) / max(total, 1) * 100:.1f}%)")
+    print(f"Kept:                 {final_count:,}  ({final_count / max(total, 1) * 100:.1f}%)")
     print(f"Output:               {output_size:.1f} GB  →  {OUTPUT_PATH}")
     print("=" * 50)
 
