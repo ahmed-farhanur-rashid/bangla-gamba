@@ -1,31 +1,58 @@
-Ready for you to run:
-# 1. Download HF sources
+============================================================
+  Bangla Gamba — Data Pipeline TODO
+============================================================
+
+Step 1: Common Crawl Harvest (Bangla-script, BD domains)
+---------------------------------------------------------
+# Quick test — single crawl, latest
+source /home/farhan/my-projects/.venv/bin/activate
+python scripts/data_scraper/cc_bd_harvest.py \
+    --out saved/data/raw/cc_bangla/
+
+# Full harvest — 4 recent crawls
+python scripts/data_scraper/cc_bd_harvest.py \
+    --crawl CC-MAIN-2026-22 CC-MAIN-2026-17 CC-MAIN-2026-12 CC-MAIN-2026-08 \
+    --out saved/data/raw/cc_bangla/ \
+    --per-domain-limit 100000
+
+# Maximum — 12 months of crawls (~5-10B raw words)
+python scripts/data_scraper/cc_bd_harvest.py \
+    --crawl CC-MAIN-2026-22 CC-MAIN-2026-17 CC-MAIN-2026-12 CC-MAIN-2026-08 \
+          CC-MAIN-2026-04 CC-MAIN-2025-51 CC-MAIN-2025-47 CC-MAIN-2025-43 \
+          CC-MAIN-2025-39 CC-MAIN-2025-35 CC-MAIN-2025-31 CC-MAIN-2025-27 \
+    --out saved/data/raw/cc_bangla/ \
+    --per-domain-limit 100000
+
+# Check output
+wc -l saved/data/raw/cc_bangla/*.jsonl
+du -sh saved/data/raw/cc_bangla/
+
+Step 2: Download HF sources
+---------------------------------------------------------
 python scripts/download_sources.py                    # CulturaX bn + FineWeb-Edu + BanglishRev
 python scripts/download_sources.py --source culturax --max-docs 10000   # test mode
 
-# 2. Scrape Prothom Alo (optional, run overnight)
+Step 3: Scrape Prothom Alo (optional, run overnight)
+---------------------------------------------------------
 python scripts/parallel_prothomalo.py --workers 8
 
-# 3. Audit BD:WB ratio of downloaded CulturaX
+Step 4: Audit BD:WB ratio of downloaded CulturaX
+---------------------------------------------------------
 python scripts/audit_bd_wb.py --input saved/data/raw/hf/culturax.jsonl --sample 2000
 
-# 4. Train tokenizer (only after you have some raw data)
+Step 5: Train tokenizer (only after you have some raw data)
+---------------------------------------------------------
 python -m src.tokenizer.train_tokenizer --input saved/data/tokenizer/tokenizer_training_corpus.txt --vocab-size 48000
 
-# 5. Wrap & use tokenizer
-python -m src.tokenizer.wrapper   # converts SP → HF tokenizer
+Step 6: Wrap & use tokenizer
+---------------------------------------------------------
+python -m src.tokenizer.wrapper   # converts SP -> HF tokenizer
 
-# 6. Build final corpus
+Step 7: Build final corpus
+---------------------------------------------------------
 python scripts/build_corpus.py
 
-# 7. Clean → pretokenize → pack (existing scripts, already use saved/ paths)
+Step 8: Clean -> pretokenize -> pack
+---------------------------------------------------------
 python scripts/clean_pipeline.py --input saved/data/final/banglagamba_corpus.jsonl --output saved/data/preprocessed/cleaned.jsonl
 python scripts/pretokenize_and_pack.py --input saved/data/preprocessed/cleaned.jsonl --output saved/data/pretokenized/
-Start with step 1 (downloads) any time you like.
-
-
-
-
-
-
-python scripts/data-scraper/cc_bd_harvest.py --crawl CC-MAIN-2026-22 --out saved/data/raw/cc_bangla/ --workers 8

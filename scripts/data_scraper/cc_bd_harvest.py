@@ -11,10 +11,15 @@ Filters out romanized Bangla (Banglish) -- this pass is Bangla-script only.
 Fetch is threaded (I/O-bound: network range requests), extraction runs
 across those same threads since trafilatura is the per-doc CPU cost.
 
-pip install requests warcio trafilatura --break-system-packages
+pip install requests warcio trafilatura
 
 Usage:
-    python cc_bd_harvest.py --crawl CC-MAIN-2026-22 --out raw/ --workers 24
+    # Single crawl (latest):
+    python cc_bd_harvest.py --out raw/
+
+    # Multiple crawls for maximum data:
+    python cc_bd_harvest.py --crawl CC-MAIN-2026-22 CC-MAIN-2026-17 \
+        CC-MAIN-2026-12 CC-MAIN-2026-08 --out raw/ --per-domain-limit 100000
 """
 
 import argparse
@@ -52,22 +57,79 @@ def is_bangla_script(text: str, min_bengali_ratio: float = 0.6) -> bool:
         return False  # too short to judge reliably, skip
     return (bengali_chars / total_letters) >= min_bengali_ratio
 
-# Expand this list as you go. Genre-tagged so you can balance your 6B budget
-# across registers (news / govt / informal) rather than just news dominating.
+# Genre-tagged so you can balance your corpus across registers rather than
+# just news dominating. All Bangladeshi-origin domains.
 DOMAIN_ALLOWLIST = {
-    "news": [
-        "prothomalo.com", "bdnews24.com", "kalerkantho.com", "jugantor.com",
-        "samakal.com", "ittefaq.com.bd", "banglanews24.com", "jagonews24.com",
-        "risingbd.com", "dhakapost.com", "somoynews.tv", "channelionline.com",
+    "news_major": [
+        "prothomalo.com",          # Largest BD newspaper by far
+        "kalerkantho.com",         # Top-circulation daily
+        "jugantor.com",            # Major national daily
+        "samakal.com",             # Leading quality daily
+        "ittefaq.com.bd",          # Oldest Bengali daily
+        "bdnews24.com",            # First 24/7 BD news service
+        "banglanews24.com",        # Major Bangla portal
+        "jagonews24.com",          # Top BD news portal
+        "risingbd.com",            # Fast-growing portal
+        "dhakapost.com",           # Major broadsheet
+        "somoynews.tv",            # Leading TV news
+        "channelionline.com",      # Channel i online
+        "bd-pratidin.com",         # Bangladesh Pratidin
+        "amadershomoy.com",        # Popular daily
+        "independent24.com",       # Independent TV
+        "ntvbd.com",               # NTV Bangladesh
+        "jamunatv.com",            # Jamuna TV
+        "news24bd.tv",             # News24
+        "ekushey-tv.com",          # Ekushey TV
+        "rtvbd.com",               # RTV
+        "dailystarbangla.com",     # Daily Star Bangla
+        "thefinancialexpress.com.bd",  # Financial Express
+    ],
+    "news_mid": [
+        "deshrupantor.com",        # Popular tabloid-style
+        "banglatribune.com",       # Bangla Tribune
+        "kalbela.com",             # Major daily
+        "manabzamin.com",          # Manab Zamin
+        "bhorerkagoj.com",         # Bhorer Kagoj
+        "nayaDiganta.com",         # Naya Diganta
+        "protidinersangbad.com",   # Prothom Din Sangbad
+        "ajkerpordomoy.com",       # Ajker Pordomoy
+        "dailysangbad.com.bd",     # Daily Sangbad
+        "dainandin.com",           # Dainik Din
+        "shomoyeralo.com",         # Shomoyer Alo
+        "bd24live.com",            # BD 24 Live
+        "mzamin.com",              # M Zamin
+        "newsbangla24.com",        # News Bangla 24
+        "goshinews.com",           # Goshi News
+        "thebangladeshtoday.com",  # The Bangladesh Today
+        "barta24.com",             # Barta 24
+        "ekattor.tv",              # Ekattor TV
+        "nagoriknews.tv",          # Nagorik News
+        "alcnews.com",             # AL C News
+    ],
+    "tabloid": [
+        "blitzbd.com",             # Blitz (tabloid)
+        "dhakatimes24.com",        # Dhaka Times
+        "khaborer-kagoj.com",      # Khaborer Kagoj
+        "lalonmart.com",           # Lalon Mart
+        "banglaonline.com",        # Bangla Online
     ],
     "government": [
-        "bangladesh.gov.bd", "bb.org.bd", "bbs.gov.bd", "nctb.gov.bd",
+        "bangladesh.gov.bd",       # Main government portal
+        "bb.org.bd",               # Bangladesh Bank
+        "bbs.gov.bd",              # Bureau of Statistics
+        "nctb.gov.bd",             # National Curriculum
+        "moedu.gov.bd",            # Ministry of Education
+        "mopa.gov.bd",             # Ministry of Planning
+        "bdgovt.com",              # Government info
     ],
     "reference": [
-        "bn.banglapedia.org",
+        "bn.banglapedia.org",      # Banglapedia
+        "bn.wikipedia.org",        # Bangla Wikipedia
     ],
     "informal": [
-        "somewhereinblog.net",
+        "somewhereinblog.net",     # Major BD blog platform
+        "valoidea.com",            # Popular BD blog
+        "banglarsamaj.com",        # Bangla community
     ],
 }
 
@@ -138,55 +200,71 @@ def _process_record(rec: dict, genre: str, domain: str) -> dict | None:
     }
 
 
-def harvest(crawl_id: str, out_dir: Path, per_domain_limit: int = 2000,
+def harvest(crawl_ids: list[str], out_dir: Path, per_domain_limit: int = 50000,
             workers: int = 16) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     write_lock = threading.Lock()
 
-    for genre, domains in DOMAIN_ALLOWLIST.items():
-        out_path = out_dir / f"{genre}.jsonl"
-        kept_total = 0
+    for crawl_id in crawl_ids:
+        print(f"\n{'='*60}")
+        print(f"CRAWL: {crawl_id}")
+        print(f"{'='*60}")
 
-        for domain in domains:
-            print(f"[{genre}] querying {domain} in {crawl_id} ...")
-            records = query_domain(domain, crawl_id, limit=per_domain_limit)
-            print(f"  -> {len(records)} candidate records, fetching with {workers} workers")
+        for genre, domains in DOMAIN_ALLOWLIST.items():
+            out_path = out_dir / f"{genre}.jsonl"
+            kept_total = 0
 
-            kept = 0
-            with ThreadPoolExecutor(max_workers=workers) as pool, \
-                 out_path.open("a", encoding="utf-8") as f:
-                futures = {
-                    pool.submit(_process_record, rec, genre, domain): rec
-                    for rec in records
-                }
-                for future in as_completed(futures):
-                    result = future.result()
-                    if result is None:
-                        continue
-                    with write_lock:
-                        f.write(json.dumps(result, ensure_ascii=False) + "\n")
-                    kept += 1
+            for domain in domains:
+                print(f"[{genre}] querying {domain} in {crawl_id} ...")
+                records = query_domain(domain, crawl_id, limit=per_domain_limit)
+                if not records:
+                    continue
+                print(f"  -> {len(records)} candidate records, fetching with {workers} workers")
 
-            print(f"  -> kept {kept}/{len(records)} (Bangla-script, length-filtered)")
-            kept_total += kept
+                kept = 0
+                with ThreadPoolExecutor(max_workers=workers) as pool, \
+                     out_path.open("a", encoding="utf-8") as f:
+                    futures = {
+                        pool.submit(_process_record, rec, genre, domain): rec
+                        for rec in records
+                    }
+                    for future in as_completed(futures):
+                        result = future.result()
+                        if result is None:
+                            continue
+                        with write_lock:
+                            f.write(json.dumps(result, ensure_ascii=False) + "\n")
+                        kept += 1
 
-        print(f"[{genre}] total kept: {kept_total}")
+                print(f"  -> kept {kept}/{len(records)} (Bangla-script, length-filtered)")
+                kept_total += kept
+
+            print(f"[{genre}] total kept from {crawl_id}: {kept_total}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--crawl", default=None,
-                         help="Crawl ID e.g. CC-MAIN-2026-22; defaults to latest")
+    parser.add_argument("--crawl", default=None, nargs="+",
+                         help="Crawl IDs e.g. --crawl CC-MAIN-2026-22 CC-MAIN-2026-17; "
+                              "defaults to latest")
     parser.add_argument("--out", default="raw_bd_corpus")
-    parser.add_argument("--per-domain-limit", type=int, default=2000)
-    parser.add_argument("--workers", type=int, default=24,
+    parser.add_argument("--per-domain-limit", type=int, default=50000,
+                         help="Max CDX records per domain per crawl. "
+                              "CC typically has 100k-500k+ for major .com sites.")
+    parser.add_argument("--workers", type=int, default=16,
                          help="Thread pool size. I/O-bound (network range "
                               "requests), so this can exceed core count -- "
                               "20-32 is reasonable on an 8-core 7700; trafilatura "
                               "parsing is the CPU cost per doc, not the fetch.")
     args = parser.parse_args()
 
-    crawl_id = args.crawl or get_latest_crawl_id()
-    print(f"Using crawl: {crawl_id}")
-    harvest(crawl_id, Path(args.out), per_domain_limit=args.per_domain_limit,
+    if args.crawl:
+        crawl_ids = args.crawl
+    else:
+        crawl_ids = [get_latest_crawl_id()]
+
+    print(f"Crawls: {crawl_ids}")
+    print(f"Domains: {sum(len(d) for d in DOMAIN_ALLOWLIST.values())}")
+    print(f"Per-domain limit: {args.per_domain_limit}")
+    harvest(crawl_ids, Path(args.out), per_domain_limit=args.per_domain_limit,
             workers=args.workers)
