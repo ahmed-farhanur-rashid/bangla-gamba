@@ -5,12 +5,10 @@ Two-pass streaming approach:
   Pass 1: Filter all raw/*.jsonl → temp filtered file (no memory buildup)
   Pass 2: MinHash dedup the temp file → final output
 
-Delete saved/data/raw/ after.
-
 Usage:
   python scripts/pipeline/02_clean.py
   python scripts/pipeline/02_clean.py --skip-dedup
-  python scripts/pipeline/02_clean.py --no-delete-raw
+  python scripts/pipeline/02_clean.py --delete-raw
 """
 
 from __future__ import annotations
@@ -152,7 +150,7 @@ def pass_dedup(total_filtered: int) -> tuple[int, int]:
                     dedup_rejected += 1
                     continue
 
-                lsh.insert(text[:64], mh)
+                lsh.insert(str(doc_id), mh)
                 doc["doc_id"] = doc_id
                 doc_id += 1
                 fout.write(json.dumps(doc, ensure_ascii=False) + "\n")
@@ -160,7 +158,7 @@ def pass_dedup(total_filtered: int) -> tuple[int, int]:
     return doc_id, dedup_rejected
 
 
-def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
+def run_clean(skip_dedup: bool = False, delete_raw: bool = False):
     CLEANED_DIR.mkdir(parents=True, exist_ok=True)
 
     raw_files = sorted(RAW_DIR.glob("*.jsonl"))
@@ -202,8 +200,8 @@ def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
 
     output_size = OUTPUT_PATH.stat().st_size / (1024 ** 3)
 
-    # Delete raw
-    if not no_delete_raw:
+    # Delete raw (opt-in only)
+    if delete_raw:
         raw_size = sum(f.stat().st_size for f in RAW_DIR.rglob("*") if f.is_file()) / (1024 ** 3)
         shutil.rmtree(RAW_DIR)
         print(f"[clean] Deleted {RAW_DIR} — freed {raw_size:.1f} GB")
@@ -224,10 +222,10 @@ def main():
     parser = argparse.ArgumentParser(description="Clean and deduplicate raw corpus.")
     parser.add_argument("--skip-dedup", action="store_true",
                         help="Skip MinHash deduplication (faster, for testing).")
-    parser.add_argument("--no-delete-raw", action="store_true",
-                        help="Keep raw/ directory after cleaning.")
+    parser.add_argument("--delete-raw", action="store_true",
+                        help="Delete raw/ directory after cleaning.")
     args = parser.parse_args()
-    run_clean(skip_dedup=args.skip_dedup, no_delete_raw=args.no_delete_raw)
+    run_clean(skip_dedup=args.skip_dedup, delete_raw=args.delete_raw)
 
 
 if __name__ == "__main__":

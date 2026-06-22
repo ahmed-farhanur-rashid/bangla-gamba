@@ -2,11 +2,10 @@
 BanglaGamba — Pretokenize & Pack
 ===================================
 Tokenize every document, pack into 2048-token sequences, write .npy shards.
-Delete saved/data/cleaned/ after.
 
 Usage:
   python scripts/pipeline/04_pretokenize.py
-  python scripts/pipeline/04_pretokenize.py --no-delete-cleaned
+  python scripts/pipeline/04_pretokenize.py --delete-cleaned
   python scripts/pipeline/04_pretokenize.py --max-tokens 1_000_000_000
 """
 
@@ -22,7 +21,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-CLEANED_PATH = Path("saved/data/cleaned/corpus_cleaned.jsonl")
+CLEANED_PATH = Path("saved/data/cleaned/corpus_deduped.jsonl")
 HF_TOKENIZER_DIR = Path("saved/tokenizer/hf")
 PRETOKENIZED_DIR = Path("saved/data/pretokenized")
 TRAIN_DIR = PRETOKENIZED_DIR / "train"
@@ -31,20 +30,17 @@ EVAL_DIR = PRETOKENIZED_DIR / "eval"
 SEQ_LEN = 2048
 BATCH_TOKENS = SEQ_LEN * 100_000  # 204.8M tokens per shard
 
-# Language token mapping
-LANG_TOKEN = {
-    "BD_WB_mix":          "<|lang_bn|>",
-    "BD_banglish":        "<|lang_bnls|>",
-    "EN_in_BN_context":   "<|lang_en|>",
-}
 
-
-def load_tokenizer():
-    """Load the HF tokenizer."""
+def _setup_imports():
+    """Ensure project root is on sys.path for src imports."""
     project_root = str(Path(__file__).resolve().parent.parent.parent)
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 
+
+def load_tokenizer():
+    """Load the HF tokenizer."""
+    _setup_imports()
     from transformers import PreTrainedTokenizerFast
 
     if not HF_TOKENIZER_DIR.exists():
@@ -56,8 +52,11 @@ def load_tokenizer():
 
 
 def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path):
-    """Reshape token_ids into (N, 2048) array and save as .npy."""
-    arr = np.array(token_ids, dtype=np.uint16).reshape(-1, SEQ_LEN)
+    """Truncate to nearest multiple of SEQ_LEN, reshape to (N, 2048), save."""
+    usable = len(token_ids) - (len(token_ids) % SEQ_LEN)
+    if usable == 0:
+        return 0
+    arr = np.array(token_ids[:usable], dtype=np.uint16).reshape(-1, SEQ_LEN)
     shard_path = output_dir / f"shard_{shard_idx:05d}.npy"
     np.save(shard_path, arr)
     return arr.shape[0]
@@ -65,8 +64,8 @@ def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="Pretokenize and pack into .npy shards.")
-    parser.add_argument("--no-delete-cleaned", action="store_true",
-                        help="Keep cleaned/ directory after pretokenization.")
+    parser.add_argument("--delete-cleaned", action="store_true",
+                        help="Delete cleaned/ directory after pretokenization.")
     parser.add_argument("--max-tokens", type=int, default=10_000_000_000,
                         help="Stop after this many tokens (default: 10B).")
     args = parser.parse_args()
@@ -92,6 +91,8 @@ def main():
             total_lines += 1
 
     # Tokenize and pack
+    from src.tokenizer.special_tokens import get_lang_token
+
     buffer = []
     shard_idx = 0
     total_tokens = 0
@@ -111,8 +112,8 @@ def main():
             text = doc.get("text", "")
             language_region = doc.get("language_region", "BD_WB_mix")
 
-            # Get language token
-            lang_token_str = LANG_TOKEN.get(language_region, "<|lang_bn|>")
+            # Get language token via canonical mapping
+            lang_token_str = get_lang_token(language_region)
             lang_token_id = tokenizer.convert_tokens_to_ids(lang_token_str)
 
             # Tokenize
@@ -134,15 +135,16 @@ def main():
                     n_rows = save_shard(chunk, shard_idx, TRAIN_DIR)
                 shard_idx += 1
 
-        # Save remaining buffer
+        # Save remaining buffer (truncated to nearest SEQ_LEN by save_shard)
         if buffer and total_tokens <= args.max_tokens:
+            remainder = len(buffer) % SEQ_LEN
+            if remainder:
+                print(f"[pretokenize] Truncating final buffer: discarding {remainder} tokens")
             if shard_idx < 2:
                 save_shard(buffer, shard_idx, EVAL_DIR)
             else:
                 save_shard(buffer, shard_idx, TRAIN_DIR)
             shard_idx += 1
-
-    bar.close()
 
     # Verify at least 1 shard in train
     train_shards = list(TRAIN_DIR.glob("shard_*.npy"))
@@ -151,8 +153,8 @@ def main():
     if not train_shards:
         print("[pretokenize] WARNING: No train shards created!")
 
-    # Delete cleaned
-    if not args.no_delete_cleaned and CLEANED_PATH.exists():
+    # Delete cleaned (opt-in only)
+    if args.delete_cleaned and CLEANED_PATH.exists():
         cleaned_size = CLEANED_PATH.stat().st_size / (1024 ** 3)
         shutil.rmtree(CLEANED_PATH.parent)
         print(f"[pretokenize] Deleted {CLEANED_PATH.parent} — freed {cleaned_size:.1f} GB")
