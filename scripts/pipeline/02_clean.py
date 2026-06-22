@@ -104,7 +104,7 @@ def run_clean(skip_dedup: bool = False, no_delete_raw: bool = False):
                     language_region = doc.get("language_region", "")
 
                     # Stage 1: Length filter
-                    min_words = 10 if source_type == "parallel_bn_en" else 30
+                    min_words = 10 if source_type == "parallel_bn_en" else 20
                     if len(text.split()) < min_words:
                         length_rejected += 1
                         continue
