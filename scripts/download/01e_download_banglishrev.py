@@ -1,6 +1,6 @@
 """
 Download BanglishRev code-mixed ecommerce reviews.
-Streamed to avoid downloading image zips. Filters pure English reviews.
+Streamed to avoid downloading image zips. Takes ALL reviews.
 
 Usage:
   python scripts/download/01e_download_banglishrev.py
@@ -20,20 +20,6 @@ OUTPUT = RAW_DIR / "banglishrev.jsonl"
 SOURCE = "banglishrev"
 SOURCE_TYPE = "code_mixed_informal"
 LANGUAGE_REGION = "BD_banglish"
-
-BANGLISH_PATTERNS = {"valo", "achi", "hobe", "kore", "emon", "khub", "onek",
-                     "bhalo", "na", "ki", "eta", "ota", "amar", "tumi", "ami",
-                     "ache", "korchi", "korte", "parbo", "jonno"}
-
-
-def has_banglish_content(text: str) -> bool:
-    for ch in text:
-        if "\u0980" <= ch <= "\u09FF":
-            return True
-    words = set(text.lower().split())
-    if words & BANGLISH_PATTERNS:
-        return True
-    return False
 
 
 def main():
@@ -66,10 +52,6 @@ def main():
 
             text = normalize_text(text)
             if not has_min_words(text):
-                bar.update(1)
-                continue
-
-            if not has_banglish_content(text):
                 bar.update(1)
                 continue
 
