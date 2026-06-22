@@ -34,7 +34,8 @@ def main():
 
     existing = count_lines(OUTPUT)
 
-    ds = load_dataset("csebuetnlp/BanglaNMT", split="train", streaming=False)
+    ds = load_dataset("csebuetnlp/BanglaNMT", split="train", streaming=False,
+                       trust_remote_code=True)
 
     with open(OUTPUT, "a") as f:
         bar = tqdm(desc="BanglaNMT       ", unit="docs", unit_scale=True,

@@ -38,7 +38,8 @@ def main():
                        split="train", streaming=True)
 
     with open(OUTPUT, "a") as f:
-        bar = tqdm(desc="BanglishRev     ", unit="docs", unit_scale=True, initial=existing)
+        bar = tqdm(desc="BanglishRev     ", unit="docs", unit_scale=True,
+                   initial=existing, total=1_740_000)
         for i, row in enumerate(ds):
             if i < existing:
                 continue
