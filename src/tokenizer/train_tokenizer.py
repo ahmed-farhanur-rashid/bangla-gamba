@@ -5,8 +5,13 @@ BanglaGamba SentencePiece Tokenizer Trainer
 Trains a SentencePiece Unigram tokenizer (48K vocab, byte fallback).
 
 Usage:
+  # From a plain-text file (one doc per line):
   python -m src.tokenizer.train_tokenizer \
       --input saved/data/tokenizer/tokenizer_training_corpus.txt
+
+  # Directly from a JSONL corpus (extracts 'text' field automatically):
+  python -m src.tokenizer.train_tokenizer \
+      --input saved/data/cleaned/corpus_deduped.jsonl --jsonl
 
 Reference: BanglaFM_Complete_Guide.md §2.3–2.4
 """
@@ -14,7 +19,9 @@ Reference: BanglaFM_Complete_Guide.md §2.3–2.4
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+import tempfile
 from pathlib import Path
 
 try:
@@ -29,6 +36,39 @@ except ImportError:
     )
 
 
+def _jsonl_to_txt(jsonl_path: Path, txt_path: Path) -> int:
+    """Stream JSONL, extract 'text' field, write one doc per line.
+
+    Returns the number of documents written.
+    """
+    from tqdm import tqdm
+
+    print(f"\nExtracting text from JSONL → {txt_path}")
+    print("  (temp file — will be deleted after training)")
+
+    # fast line count
+    n_lines = 0
+    with open(jsonl_path, "rb") as f:
+        for _ in f:
+            n_lines += 1
+
+    written = 0
+    with open(jsonl_path, "r") as fin, open(txt_path, "w") as fout:
+        for line in tqdm(fin, total=n_lines, desc="Extracting", unit="docs", unit_scale=True):
+            try:
+                doc = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            text = doc.get("text", "")
+            if text:
+                fout.write(" ".join(text.split()) + "\n")
+                written += 1
+
+    size_gb = txt_path.stat().st_size / (1024 ** 3)
+    print(f"  Extracted {written:,} docs  ({size_gb:.2f} GB)")
+    return written
+
+
 def train_tokenizer(
     input_file: str,
     output_dir: str,
@@ -36,6 +76,7 @@ def train_tokenizer(
     vocab_size: int = VOCAB_SIZE,
     num_threads: int = 8,
     input_sentence_size: int = 50_000_000,
+    jsonl: bool = False,
 ) -> Path:
     """Train a SentencePiece Unigram tokenizer."""
     try:
@@ -65,15 +106,25 @@ def train_tokenizer(
         print(f"ERROR: Input file not found: {input_file}")
         sys.exit(1)
 
-    file_size_gb = input_path.stat().st_size / (1024 ** 3)
-    print(f"Input file size: {file_size_gb:.2f} GB")
+    # If JSONL, extract text to a temp .txt in the same directory
+    tmp_txt_path = None
+    if jsonl:
+        tmp_txt_path = input_path.parent / ".tokenizer_tmp_corpus.txt"
+        _jsonl_to_txt(input_path, tmp_txt_path)
+        actual_input = str(tmp_txt_path)
+    else:
+        actual_input = str(input_file)
+
+    actual_path = Path(actual_input)
+    file_size_gb = actual_path.stat().st_size / (1024 ** 3)
+    print(f"Training input size: {file_size_gb:.2f} GB")
     if file_size_gb < 0.001:
         print("WARNING: Input file is very small. Tokenizer quality may suffer.")
 
     print("\nTraining (may take 2–6 hours on a large corpus)...")
 
     spm.SentencePieceTrainer.train(
-        input=str(input_file),
+        input=actual_input,
         model_prefix=str(model_path),
         vocab_size=vocab_size,
         character_coverage=CHARACTER_COVERAGE,
@@ -91,6 +142,12 @@ def train_tokenizer(
         remove_extra_whitespaces=False,
         train_extremely_large_corpus=file_size_gb > 5.0,
     )
+
+    # Clean up temp file
+    if tmp_txt_path is not None and tmp_txt_path.exists():
+        freed = tmp_txt_path.stat().st_size / (1024 ** 3)
+        tmp_txt_path.unlink()
+        print(f"\n🗑️  Deleted temp file — freed {freed:.2f} GB")
 
     model_file = Path(f"{model_path}.model")
     vocab_file = Path(f"{model_path}.vocab")
@@ -143,7 +200,9 @@ def main():
         description="Train a SentencePiece Unigram tokenizer for BanglaGamba.",
     )
     parser.add_argument("--input", "-i", required=True,
-                        help="Path to training corpus (one doc per line).")
+                        help="Path to training corpus (.txt or .jsonl).")
+    parser.add_argument("--jsonl", action="store_true",
+                        help="Input is JSONL — extract 'text' field automatically.")
     parser.add_argument("--output-dir", "-o", default="saved/tokenizer",
                         help="Output directory (default: saved/tokenizer).")
     parser.add_argument("--model-prefix", default="banglagamba_tokenizer",
@@ -161,6 +220,7 @@ def main():
         vocab_size=args.vocab_size,
         num_threads=args.num_threads,
         input_sentence_size=args.input_sentence_size,
+        jsonl=args.jsonl,
     )
 
 
