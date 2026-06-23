@@ -22,6 +22,7 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import yaml
+from tqdm import tqdm
 
 # ── Histogram buckets (upper bounds, exclusive) ──────────────────────────────
 BUCKETS = [50, 100, 200, 500, 1000, 2000, 5000, 10000]
@@ -402,8 +403,12 @@ def main():
 
     # Run workers
     tasks = [(str(f), i) for i, f in enumerate(jsonl_files)]
+    partials = []
     with Pool(args.workers) as pool:
-        partials = pool.map(count_file, tasks)
+        for result in tqdm(pool.imap_unordered(count_file, tasks),
+                           total=len(jsonl_files), desc="Counting",
+                           unit="file"):
+            partials.append(result)
 
     print("[count] Merging results...", file=sys.stderr)
     merged = merge_results(partials)
@@ -446,6 +451,9 @@ def main():
     print(yaml_str)
 
     # Save to file
+    reports_dir = Path("saved/reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
     if args.output:
         out_path = Path(args.output)
     else:
@@ -453,7 +461,7 @@ def main():
         first_name = jsonl_files[0].stem
         if len(jsonl_files) > 1:
             first_name = "multi"
-        out_path = Path(f"count_report_{first_name}.yaml")
+        out_path = reports_dir / f"count_report_{first_name}.yaml"
 
     out_path.write_text(yaml_str)
     print(f"\n[count] Report saved to {out_path}", file=sys.stderr)
