@@ -48,7 +48,7 @@ kiwisolver==1.5.0
 kornia==0.8.2
 kornia_rs==0.1.11
 lightning-utilities==0.15.3
-mamba_ssm @ file:///home/farhan/CRUMB/mamba-src
+mamba_ssm @ file:///home/farhan/my-projects/bangla-gamba/mamba-src
 Markdown==3.10.2
 markdown-it-py==4.2.0
 MarkupSafe==3.0.3
