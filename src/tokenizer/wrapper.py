@@ -11,7 +11,6 @@ Usage:
       --spm-model saved/tokenizer/banglagamba_tokenizer.model \
       --output-dir saved/tokenizer/hf
 
-Reference: BanglaFM_Complete_Guide.md §2.7
 """
 
 from __future__ import annotations

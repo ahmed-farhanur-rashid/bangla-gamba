@@ -226,7 +226,7 @@ def _validate_tokenizer(model_path: str) -> None:
 
     # Verify special tokens
     print("  Special token check:")
-    for tok in ["<pad>", "<unk>", "<bos>", "<eos>", "<|im_start|>",
+    for tok in ["<pad>", "<unk>", "<s>", "</s>", "<|im_start|>",
                 "<|lang_bn|>", "<|positive|>", "<|reserved_0|>", "<|reserved_99|>"]:
         tid = sp.PieceToId(tok)
         ok = tid != sp.unk_id() or tok == "<unk>"
