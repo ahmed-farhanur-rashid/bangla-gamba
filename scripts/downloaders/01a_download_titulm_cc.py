@@ -1,6 +1,6 @@
 """
-Download TituLM Common Crawl Bangla corpus.
-4.5M docs, streamed. Supports mid-download resumption.
+Download full TituLM Common Crawl Bangla corpus.
+Streams the entire CC subset. Supports mid-download resumption.
 
 Output (v3 schema):
   {"text": "<|lang_bn|>...", "source": "titullm", "source_type": "web_bangla",
@@ -8,13 +8,10 @@ Output (v3 schema):
 
 Usage:
   python scripts/downloaders/01a_download_titulm_cc.py
-  python scripts/downloaders/01a_download_titulm_cc.py --doc-limit 6000000
-  python scripts/downloaders/01a_download_titulm_cc.py --max-docs 5000
 """
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 
 from tqdm import tqdm
@@ -28,39 +25,24 @@ OUTPUT = RAW_DIR / "titullm.jsonl"
 SOURCE = "titullm"
 SOURCE_TYPE = "web_bangla"
 LANGUAGE_REGION = "BD"
-DEFAULT_LIMIT = 4_500_000
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--doc-limit", type=int, default=None,
-                        help="Override default doc limit (4.5M).")
-    parser.add_argument("--max-docs", type=int, default=None,
-                        help="Test mode: download at most N docs.")
-    args = parser.parse_args()
-
     from datasets import load_dataset
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    limit = args.doc_limit or args.max_docs or DEFAULT_LIMIT
     existing = count_lines(OUTPUT)
-
-    if existing >= limit:
-        print(f"  \u21b7 titullm already complete ({existing:,} docs), skipping")
-        return
 
     ds = load_dataset("hishab/titulm-bangla-corpus", data_dir="common_crawl",
                        split="train", streaming=True)
 
     with open(OUTPUT, "a") as f:
         bar = tqdm(desc="TituLM CC       ", unit="docs", unit_scale=True,
-                   initial=existing, total=limit)
+                   initial=existing)
         written = 0
         skip = existing
         for row in ds:
-            if written + existing >= limit:
-                break
             text = normalize_doc(row.get("text", ""))
             if not has_min_words(text):
                 continue
