@@ -1,12 +1,19 @@
 """
-BanglaGamba — Pretokenize & Pack
-===================================
-Tokenize every document, pack into 2048-token sequences, write .npy shards.
+Pretokenize & Pack — per source type.
+
+Tokenizes every document, packs into 2048-token sequences, writes .npy shards.
+Output directories:
+  saved/data/pretokenized/bangla/train/
+  saved/data/pretokenized/english/train/
+  saved/data/pretokenized/nmt/train/
+
+No language token injection — tokens are already in text from downloaders.
+No eval split — everything goes to train.
 
 Usage:
   python scripts/pipeline/04_pretokenize.py
+  python scripts/pipeline/04_pretokenize.py --max-tokens 5_000_000_000
   python scripts/pipeline/04_pretokenize.py --delete-cleaned
-  python scripts/pipeline/04_pretokenize.py --max-tokens 1_000_000_000
 """
 
 from __future__ import annotations
@@ -21,25 +28,53 @@ import numpy as np
 from tqdm import tqdm
 
 
-CLEANED_PATH = Path("saved/data/cleaned/corpus_deduped.jsonl")
+CLEANED_DIR = Path("saved/data/cleaned")
+RAW_DIR = Path("saved/data/raw")
 HF_TOKENIZER_DIR = Path("saved/tokenizer/hf")
 PRETOKENIZED_DIR = Path("saved/data/pretokenized")
-TRAIN_DIR = PRETOKENIZED_DIR / "train"
-EVAL_DIR = PRETOKENIZED_DIR / "eval"
 
 SEQ_LEN = 2048
 BATCH_TOKENS = SEQ_LEN * 100_000  # 204.8M tokens per shard
 
+# Source type → input files + output directory
+SOURCE_CONFIGS = {
+    "bangla": {
+        "inputs": [
+            CLEANED_DIR / "bangla.jsonl",  # deduped TituLLM + Wiki
+        ],
+        "fallback_inputs": [
+            RAW_DIR / "titullm.jsonl",     # if dedup not run yet
+            RAW_DIR / "wiki_bangla.jsonl",
+        ],
+        "output": PRETOKENIZED_DIR / "bangla" / "train",
+    },
+    "english": {
+        "inputs": [
+            RAW_DIR / "fineweb_edu.jsonl",
+        ],
+        "fallback_inputs": [],
+        "output": PRETOKENIZED_DIR / "english" / "train",
+    },
+    "nmt": {
+        "inputs": [
+            CLEANED_DIR / "nmt.jsonl",     # deduped NLLB + BanglaNMT
+        ],
+        "fallback_inputs": [
+            RAW_DIR / "nllb.jsonl",        # if dedup not run yet
+            RAW_DIR / "banglanmt.jsonl",
+        ],
+        "output": PRETOKENIZED_DIR / "nmt" / "train",
+    },
+}
+
 
 def _setup_imports():
-    """Ensure project root is on sys.path for src imports."""
     project_root = str(Path(__file__).resolve().parent.parent.parent)
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
 
 
 def load_tokenizer():
-    """Load the HF tokenizer."""
     _setup_imports()
     from transformers import PreTrainedTokenizerFast
 
@@ -47,12 +82,10 @@ def load_tokenizer():
         print(f"[pretokenize] ERROR: HF tokenizer not found at {HF_TOKENIZER_DIR}")
         sys.exit(1)
 
-    tokenizer = PreTrainedTokenizerFast.from_pretrained(str(HF_TOKENIZER_DIR))
-    return tokenizer
+    return PreTrainedTokenizerFast.from_pretrained(str(HF_TOKENIZER_DIR))
 
 
-def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path):
-    """Truncate to nearest multiple of SEQ_LEN, reshape to (N, 2048), save."""
+def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path) -> int:
     usable = len(token_ids) - (len(token_ids) % SEQ_LEN)
     if usable == 0:
         return 0
@@ -62,123 +95,143 @@ def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path):
     return arr.shape[0]
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Pretokenize and pack into .npy shards.")
-    parser.add_argument("--delete-cleaned", action="store_true",
-                        help="Delete cleaned/ directory after pretokenization.")
-    parser.add_argument("--max-tokens", type=int, default=10_000_000_000,
-                        help="Stop after this many tokens (default: 10B).")
-    args = parser.parse_args()
+def _count_lines(path: Path) -> int:
+    with open(path, "rb") as f:
+        return sum(buf.count(b"\n") for buf in iter(lambda: f.read(1 << 20), b""))
 
-    if not CLEANED_PATH.exists():
-        print(f"[pretokenize] ERROR: {CLEANED_PATH} not found. Run 02_clean.py first.")
-        sys.exit(1)
 
-    TRAIN_DIR.mkdir(parents=True, exist_ok=True)
-    EVAL_DIR.mkdir(parents=True, exist_ok=True)
+def _resolve_inputs(config: dict) -> list[Path]:
+    """Return existing input files, preferring cleaned over raw."""
+    inputs = [p for p in config["inputs"] if p.exists()]
+    if not inputs:
+        inputs = [p for p in config.get("fallback_inputs", []) if p.exists()]
+    return inputs
 
-    tokenizer = load_tokenizer()
+
+def pretokenize_source(
+    source_type: str,
+    config: dict,
+    tokenizer,
+    max_tokens: int,
+) -> tuple[int, int]:
+    """Pretokenize one source type. Returns (tokens_written, docs_processed)."""
+    output_dir = config["output"]
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    inputs = _resolve_inputs(config)
+    if not inputs:
+        print(f"[pretokenize] WARNING: No input files for {source_type}, skipping")
+        return 0, 0
+
+    # Count total lines
+    total_lines = sum(_count_lines(p) for p in inputs)
+
     eos_id = tokenizer.eos_token_id
-    vocab_size = tokenizer.vocab_size
-
-    print(f"[pretokenize] Tokenizer loaded (vocab={vocab_size}, eos_id={eos_id})")
-    print(f"[pretokenize] Reading {CLEANED_PATH}...")
-
-    # Count total lines for progress
-    total_lines = 0
-    with open(CLEANED_PATH, "rb") as f:
-        for _ in f:
-            total_lines += 1
-
-    # Tokenize and pack
-    from src.tokenizer.special_tokens import get_lang_token
-
     buffer = []
     shard_idx = 0
     total_tokens = 0
     total_docs = 0
 
-    with open(CLEANED_PATH, "r") as f, tqdm(total=total_lines, desc="Pretokenizing", unit="docs", unit_scale=True) as bar:
-        for line in f:
-            bar.update(1)
-            if total_tokens >= args.max_tokens:
+    print(f"[pretokenize] {source_type}: {len(inputs)} input file(s), {total_lines:,} lines")
+
+    with tqdm(total=total_lines, desc=f"  {source_type}", unit="docs", unit_scale=True) as bar:
+        for input_path in inputs:
+            with open(input_path, "r") as f:
+                for line in f:
+                    bar.update(1)
+                    if total_tokens >= max_tokens:
+                        break
+
+                    try:
+                        doc = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    text = doc.get("text", "").strip()
+                    if not text:
+                        continue
+
+                    # Tokenize — text already has special tokens from downloaders
+                    tokens = tokenizer.encode(text, add_special_tokens=False)
+                    tokens = tokens + [eos_id]
+
+                    buffer.extend(tokens)
+                    total_tokens += len(tokens)
+                    total_docs += 1
+
+                    # Flush when buffer is large enough
+                    while len(buffer) >= BATCH_TOKENS:
+                        chunk = buffer[:BATCH_TOKENS]
+                        buffer = buffer[BATCH_TOKENS:]
+                        rows = save_shard(chunk, shard_idx, output_dir)
+                        shard_idx += 1
+
+            if total_tokens >= max_tokens:
                 break
 
-            try:
-                doc = json.loads(line)
-            except json.JSONDecodeError:
-                continue
+    # Save remaining buffer
+    if buffer:
+        remainder = len(buffer) % SEQ_LEN
+        if remainder:
+            print(f"  [pretokenize] Truncating final buffer: discarding {remainder} tokens")
+        rows = save_shard(buffer, shard_idx, output_dir)
+        shard_idx += 1
 
-            text = doc.get("text", "")
-            language_region = doc.get("language_region", "BD_WB_mix")
+    return total_tokens, total_docs
 
-            # Get language token via canonical mapping
-            lang_token_str = get_lang_token(language_region)
-            lang_token_id = tokenizer.convert_tokens_to_ids(lang_token_str)
 
-            # Tokenize
-            tokens = tokenizer.encode(text, add_special_tokens=False)
-            tokens = [lang_token_id] + tokens + [eos_id]
+def main():
+    parser = argparse.ArgumentParser(description="Pretokenize and pack into .npy shards.")
+    parser.add_argument("--max-tokens", type=int, default=10_000_000_000,
+                        help="Stop after this many tokens (default: 10B).")
+    parser.add_argument("--delete-cleaned", action="store_true",
+                        help="Delete cleaned/ directory after pretokenization.")
+    parser.add_argument("--source", choices=["bangla", "english", "nmt", "all"], default="all",
+                        help="Which source type to pretokenize (default: all).")
+    args = parser.parse_args()
 
-            buffer.extend(tokens)
-            total_tokens += len(tokens)
-            total_docs += 1
+    tokenizer = load_tokenizer()
+    print(f"[pretokenize] Tokenizer loaded (vocab={tokenizer.vocab_size})")
 
-            # Flush when buffer is large enough
-            while len(buffer) >= BATCH_TOKENS:
-                chunk = buffer[:BATCH_TOKENS]
-                buffer = buffer[BATCH_TOKENS:]
+    sources = list(SOURCE_CONFIGS.keys()) if args.source == "all" else [args.source]
 
-                if shard_idx < 2:
-                    n_rows = save_shard(chunk, shard_idx, EVAL_DIR)
-                else:
-                    n_rows = save_shard(chunk, shard_idx, TRAIN_DIR)
-                shard_idx += 1
+    grand_tokens = 0
+    grand_docs = 0
 
-        # Save remaining buffer (truncated to nearest SEQ_LEN by save_shard)
-        if buffer and total_tokens <= args.max_tokens:
-            remainder = len(buffer) % SEQ_LEN
-            if remainder:
-                print(f"[pretokenize] Truncating final buffer: discarding {remainder} tokens")
-            if shard_idx < 2:
-                save_shard(buffer, shard_idx, EVAL_DIR)
-            else:
-                save_shard(buffer, shard_idx, TRAIN_DIR)
-            shard_idx += 1
+    for source_type in sources:
+        config = SOURCE_CONFIGS[source_type]
+        tokens, docs = pretokenize_source(source_type, config, tokenizer, args.max_tokens)
+        grand_tokens += tokens
+        grand_docs += docs
 
-    # Verify at least 1 shard in train
-    train_shards = list(TRAIN_DIR.glob("shard_*.npy"))
-    eval_shards = list(EVAL_DIR.glob("shard_*.npy"))
+    # Calculate stats
+    total_shards = 0
+    for source_type in sources:
+        output_dir = SOURCE_CONFIGS[source_type]["output"]
+        shards = list(output_dir.glob("shard_*.npy"))
+        total_shards += len(shards)
 
-    if not train_shards:
-        print("[pretokenize] WARNING: No train shards created!")
+    tokens_per_step = 4 * 64 * SEQ_LEN
+    approx_steps = grand_tokens // tokens_per_step
 
-    # Delete cleaned (opt-in only)
-    if args.delete_cleaned and CLEANED_PATH.exists():
-        cleaned_size = CLEANED_PATH.stat().st_size / (1024 ** 3)
-        shutil.rmtree(CLEANED_PATH.parent)
-        print(f"[pretokenize] Deleted {CLEANED_PATH.parent} — freed {cleaned_size:.1f} GB")
+    print(f"\n{'=' * 50}")
+    print(f"=== PRETOKENIZATION COMPLETE ===")
+    print(f"  Documents:       {grand_docs:,}")
+    print(f"  Tokens:          {grand_tokens:,}  ({grand_tokens / 1e9:.2f}B)")
+    print(f"  Total shards:    {total_shards}")
+    for source_type in sources:
+        output_dir = SOURCE_CONFIGS[source_type]["output"]
+        n = len(list(output_dir.glob("shard_*.npy")))
+        print(f"    {source_type:>10}: {n:>4} shards  →  {output_dir}")
+    print(f"  Approx steps:    {approx_steps:,}")
+    print(f"    (batch=4 × accum=64 × seq=2048 = {tokens_per_step:,} tokens/step)")
+    print(f"\n  ACTION: set max_steps: {approx_steps} in configs/default_training.yaml")
+    print(f"{'=' * 50}")
 
-    # Calculate disk usage
-    total_disk = sum(f.stat().st_size for f in PRETOKENIZED_DIR.rglob("*.npy")) / (1024 ** 3)
-
-    # Training steps estimate
-    tokens_per_step = 4 * 64 * SEQ_LEN  # batch_size=4, accum=64
-    approx_steps = total_tokens // tokens_per_step
-
-    print("\n" + "=" * 50)
-    print("=== PRETOKENIZATION COMPLETE ===")
-    print(f"Documents:        {total_docs:,}")
-    print(f"Tokens:           {total_tokens:,}  ({total_tokens / 1e9:.2f}B)")
-    print(f"Train shards:     {len(train_shards):>4}  →  {TRAIN_DIR}")
-    print(f"Eval shards:      {len(eval_shards):>4}  →  {EVAL_DIR}")
-    print(f"Disk:             ~{total_disk:.1f} GB")
-    print()
-    print(f"Approx training steps: {approx_steps:,}")
-    print(f"  (tokens_per_step = batch_size=4 × accum=64 × seq_len=2048 = {tokens_per_step:,})")
-    print()
-    print(f"ACTION REQUIRED: set  max_steps: {approx_steps}  in configs/default_training.yaml")
-    print("=" * 50)
+    # Delete cleaned (opt-in)
+    if args.delete_cleaned and CLEANED_DIR.exists():
+        shutil.rmtree(CLEANED_DIR)
+        print(f"[pretokenize] Deleted {CLEANED_DIR}")
 
 
 if __name__ == "__main__":

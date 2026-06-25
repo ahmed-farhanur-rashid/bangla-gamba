@@ -64,14 +64,22 @@ def create_hf_tokenizer(
 
     print(f"Loading SentencePiece model: {spm_path}")
 
-    tokenizer = PreTrainedTokenizerFast(
-        tokenizer_file=str(spm_path),
-        bos_token=BOS_TOKEN,
-        eos_token=EOS_TOKEN,
-        unk_token=UNK_TOKEN,
-        pad_token=PAD_TOKEN,
-        additional_special_tokens=USER_DEFINED_SYMBOLS,
-    )
+    # ponytail: PreTrainedTokenizerFast cannot consume a raw .model file.
+    # Load as slow tokenizer, save_pretrained to a temp dir, reload as fast.
+    import tempfile
+    from transformers import PreTrainedTokenizer
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        slow = PreTrainedTokenizer(
+            vocab_file=str(spm_path),
+            bos_token=BOS_TOKEN,
+            eos_token=EOS_TOKEN,
+            unk_token=UNK_TOKEN,
+            pad_token=PAD_TOKEN,
+            additional_special_tokens=USER_DEFINED_SYMBOLS,
+        )
+        slow.save_pretrained(tmp_dir)
+        tokenizer = PreTrainedTokenizerFast.from_pretrained(tmp_dir)
 
     # Register the ChatML template
     tokenizer.chat_template = CHAT_TEMPLATE
@@ -152,12 +160,15 @@ def _test_tokenizer(tokenizer) -> None:
             tokenize=False,
             add_generation_prompt=True,
         )
+        assert "<|im_start|>" in chat_text, "Chat template missing im_start token"
         print(f"  Chat template output:")
         for line in chat_text.split("\n"):
             print(f"    {line}")
-        print(f"\n  ✅ Chat template works correctly.")
+        print(f"\n  [OK] Chat template works correctly.")
+    except AssertionError as e:
+        print(f"  [FAIL] Chat template assertion: {e}")
     except Exception as e:
-        print(f"  ⚠️  Chat template error: {e}")
+        print(f"  [FAIL] Chat template error: {e}")
 
 
 def main():
