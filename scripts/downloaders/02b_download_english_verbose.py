@@ -79,7 +79,7 @@ def is_clean(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def _stream_config(repo: str, config: str, word_budget: int, total_words: int,
-                   f, docs: int, skipped: int):
+                   f, docs: int, skipped: int, filtered_content: int):
     """Stream one FineWeb-Edu config until budget is met. Returns updated counters."""
     from datasets import load_dataset
 
@@ -112,7 +112,7 @@ def _stream_config(repo: str, config: str, word_budget: int, total_words: int,
         total_words += word_count
         docs += 1
 
-    return total_words, docs, skipped
+    return total_words, docs, skipped, filtered_content
 
 
 def download_fineweb(word_budget: int):
@@ -134,14 +134,15 @@ def download_fineweb(word_budget: int):
     total_words = existing * AVG_WORDS_PER_DOC
     docs = 0
     skipped = 0
+    filtered_content = 0
 
     with open(OUTPUT, "a") as f:
         for repo, config in FINEWEB_EDU_CONFIGS:
             if total_words >= word_budget:
                 break
-            total_words, docs, skipped = _stream_config(
+            total_words, docs, skipped, filtered_content = _stream_config(
                 repo, config, word_budget, total_words,
-                f, docs, skipped,
+                f, docs, skipped, filtered_content,
             )
             if total_words < word_budget:
                 remaining = word_budget - total_words
@@ -157,6 +158,7 @@ def download_fineweb(word_budget: int):
     print(f"  Documents      : {docs:>12,}")
     print(f"  Words collected: {total_words:>12,}")
     print(f"  Skipped        : {skipped:>12,}")
+    print(f"  Content filter : {filtered_content:>12,}  (adult/spam blocked)")
     print(f"  Output         : {OUTPUT}  ({size_mb:.1f} MB)")
 
 
