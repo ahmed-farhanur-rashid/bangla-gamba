@@ -1,5 +1,5 @@
 """
-Download ~1B words of English from FineWeb (sample-10BT).
+Download English from FineWeb (sample-10BT).
 Streams and stops once word budget is hit.
 
 Output (v3 schema):
@@ -7,10 +7,11 @@ Output (v3 schema):
    "language_region": "EN", "word_count": N}
 
 Usage:
-  pip install datasets tqdm
   python scripts/downloaders/02a_download_english.py
+  python scripts/downloaders/02a_download_english.py --word-budget 2_000_000_000
 """
 
+import argparse
 from pathlib import Path
 from tqdm import tqdm
 
@@ -23,11 +24,11 @@ OUTPUT = RAW_DIR / "fineweb_edu.jsonl"
 SOURCE = "fineweb_edu"
 SOURCE_TYPE = "web_english"
 LANGUAGE_REGION = "EN"
-WORD_BUDGET = 1_000_000_000
-AVG_WORDS_PER_DOC = 300  # rough estimate for resume
+DEFAULT_WORD_BUDGET = 1_000_000_000
+AVG_WORDS_PER_DOC = 300
 
 
-def download_fineweb():
+def download_fineweb(word_budget: int):
     from datasets import load_dataset
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
@@ -35,12 +36,12 @@ def download_fineweb():
 
     if existing > 0:
         estimated_words = existing * AVG_WORDS_PER_DOC
-        if estimated_words >= WORD_BUDGET:
+        if estimated_words >= word_budget:
             print(f"  \u21b7 fineweb already complete (~{estimated_words:,} words estimated), skipping")
             return
 
     print("── Downloading FineWeb sample-10BT ──")
-    print(f"   Word budget: {WORD_BUDGET:,}")
+    print(f"   Word budget: {word_budget:,}")
     print(f"   Existing: {existing:,} docs")
     print(f"   Streaming — will stop when budget is hit\n")
 
@@ -57,6 +58,10 @@ def download_fineweb():
 
     with open(OUTPUT, "a") as f:
         for row in tqdm(ds, desc="FineWeb", unit=" docs"):
+            if total_words >= word_budget:
+                print(f"\n   Budget reached.")
+                break
+
             text = (row.get("text") or "").strip()
 
             if not text:
@@ -76,10 +81,6 @@ def download_fineweb():
             total_words += word_count
             docs += 1
 
-            if total_words >= WORD_BUDGET:
-                print(f"\n   Budget reached.")
-                break
-
     size_mb = OUTPUT.stat().st_size / 1e6
     print(f"\nDone.")
     print(f"  Documents      : {docs:>12,}")
@@ -88,5 +89,13 @@ def download_fineweb():
     print(f"  Output         : {OUTPUT}  ({size_mb:.1f} MB)")
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Download English from FineWeb.")
+    parser.add_argument("--word-budget", type=int, default=DEFAULT_WORD_BUDGET,
+                        help=f"Word budget (default: {DEFAULT_WORD_BUDGET:,}).")
+    args = parser.parse_args()
+    download_fineweb(args.word_budget)
+
+
 if __name__ == "__main__":
-    download_fineweb()
+    main()

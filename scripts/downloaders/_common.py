@@ -16,13 +16,6 @@ LANG_EN    = "<|lang_en|>"
 TASK_BN_EN = "<|task_translate_bn_en|>"
 TASK_EN_BN = "<|task_translate_en_bn|>"
 
-# ── Bangla normalizer — single instance, reused across all calls ────────────
-try:
-    from bnunicodenormalizer import Normalizer as _BNNorm
-    _bn_normalizer = _BNNorm()
-except ImportError:
-    _bn_normalizer = None
-
 
 def count_lines(path: Path) -> int:
     if not path.exists():
@@ -46,24 +39,14 @@ def nfc(text: str) -> str:
     return unicodedata.normalize("NFC", text)
 
 
-def _apply_bn_norm(text: str) -> str:
-    if _bn_normalizer is not None:
-        result = _bn_normalizer.normalize(text)
-        text = result.get("normalized", result.get("text", text)) if isinstance(result, dict) else result
-    return text
-
-
 def normalize_text(text: str) -> str:
     """For NMT pairs — collapses whitespace, single-line output."""
-    text = nfc(text)
-    text = _apply_bn_norm(text)
-    return " ".join(text.split())
+    return " ".join(nfc(text).split())
 
 
 def normalize_doc(text: str) -> str:
     """For monolingual docs — preserves paragraph breaks."""
     text = nfc(text)
-    text = _apply_bn_norm(text)
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
     return text
 
