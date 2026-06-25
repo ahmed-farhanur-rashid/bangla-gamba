@@ -2,7 +2,7 @@
 Sample ~1B words from Bangla + English for tokenizer training.
 
 Ratio: 85% Bangla / 15% English (matches target training composition).
-Reads from raw JSONL files (no dependency on dedup step).
+Reads from cleaned JSONL files.
 Shuffles output so tokenizer sees interleaved languages.
 
 Output:
@@ -23,7 +23,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-RAW_DIR = Path("saved/data/raw")
+CLEANED_DIR = Path("saved/data/cleaned")
 OUTPUT_DIR = Path("saved/data/tokenizer_set")
 CORPUS_PATH = OUTPUT_DIR / "corpus.jsonl"
 
@@ -31,11 +31,10 @@ DEFAULT_TOTAL_WORDS = 1_000_000_000
 DEFAULT_BN_RATIO = 0.85
 
 BANGLA_SOURCES = [
-    RAW_DIR / "titullm.jsonl",
-    RAW_DIR / "wiki_bangla.jsonl",
+    CLEANED_DIR / "bangla.jsonl",
 ]
 ENGLISH_SOURCES = [
-    RAW_DIR / "fineweb_edu.jsonl",
+    CLEANED_DIR / "english.jsonl",
 ]
 
 

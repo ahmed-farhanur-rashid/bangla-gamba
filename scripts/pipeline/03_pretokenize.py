@@ -50,7 +50,7 @@ SOURCE_CONFIGS = {
     },
     "english": {
         "inputs": [
-            RAW_DIR / "fineweb_edu.jsonl",
+            CLEANED_DIR / "english.jsonl",
         ],
         "fallback_inputs": [],
         "output": PRETOKENIZED_DIR / "english" / "train",

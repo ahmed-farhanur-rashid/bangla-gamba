@@ -9,6 +9,7 @@ import unicodedata
 from pathlib import Path
 
 RAW_DIR = Path("saved/data/raw")
+CLEANED_DIR = Path("saved/data/cleaned")
 
 # ── Token prefixes (source of truth: src/tokenizer/special_tokens.py) ────────
 LANG_BN    = "<|lang_bn|>"

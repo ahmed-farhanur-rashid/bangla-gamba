@@ -16,11 +16,11 @@ from pathlib import Path
 from tqdm import tqdm
 
 from _common import (
-    RAW_DIR, LANG_EN, count_lines, write_doc,
+    RAW_DIR, CLEANED_DIR, LANG_EN, count_lines, write_doc,
     nfc, wc,
 )
 
-OUTPUT = RAW_DIR / "fineweb_edu.jsonl"
+OUTPUT = CLEANED_DIR / "english.jsonl"
 SOURCE = "fineweb_edu"
 SOURCE_TYPE = "web_english"
 LANGUAGE_REGION = "EN"
@@ -31,7 +31,7 @@ AVG_WORDS_PER_DOC = 300
 def download_fineweb(word_budget: int):
     from datasets import load_dataset
 
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    CLEANED_DIR.mkdir(parents=True, exist_ok=True)
     existing = count_lines(OUTPUT)
 
     if existing > 0:
