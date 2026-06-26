@@ -111,3 +111,17 @@ Add more swap if less and less if you have more ram
     --categories bangla_formal english   run specific categories only
     --sample-size 5000         smaller corpus sample
     --no-corpus                skip corpus tests, curated sentences only
+
+
+===================================================
+  Step 5: Pretokenization and Sequence Packing           
+===================================================
+  Run all three sources separately
+
+  python scripts/pipeline/03_pretokenize.py --source bangla
+  python scripts/pipeline/03_pretokenize.py --source english
+  python scripts/pipeline/03_pretokenize.py --source nmt
+
+  Or all at once
+
+  python scripts/pipeline/03_pretokenize.py
