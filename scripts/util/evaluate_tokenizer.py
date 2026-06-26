@@ -2,20 +2,14 @@
 BanglaGamba Tokenizer Evaluation
 =================================
 
-Compares the trained BanglaGamba tokenizer against reference tokenizers
-on fertility, compression, UNK rate, and speed.
-
-Reference tokenizers:
-  - mBART-50  (facebook/mbart-large-50-many-to-many-mmt)
-  - NLLB-200  (facebook/nllb-200-distilled-600M)
-  - BanglaBERT (sagorsarker/bangla-bert-base)
-  - GPT-2     (gpt2)
+Compares BanglaGamba against reference tokenizers on fertility, compression,
+UNK rate, and speed. Also runs quick sanity checks (--sanity).
 
 Usage:
   python scripts/util/evaluate_tokenizer.py
+  python scripts/util/evaluate_tokenizer.py --sanity --skip-references
   python scripts/util/evaluate_tokenizer.py --sample-size 5000
-  python scripts/util/evaluate_tokenizer.py --skip-references
-  python scripts/util/evaluate_tokenizer.py --categories bangla english
+  python scripts/util/evaluate_tokenizer.py --categories bangla_formal english
 """
 
 from __future__ import annotations
@@ -26,26 +20,21 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 BANGLA_GAMBA_TOKENIZER = PROJECT_ROOT / "saved" / "tokenizer" / "hf"
-BANGLA_CORPUS = PROJECT_ROOT / "saved" / "data" / "cleaned" / "bangla.jsonl"
+BANGLA_CORPUS  = PROJECT_ROOT / "saved" / "data" / "cleaned" / "bangla.jsonl"
 ENGLISH_CORPUS = PROJECT_ROOT / "saved" / "data" / "cleaned" / "english.jsonl"
-REPORT_DIR = PROJECT_ROOT / "saved" / "reports"
-
-# ── Reference tokenizer model IDs ──────────────────────────────────────────
+REPORT_DIR     = PROJECT_ROOT / "saved" / "reports"
 
 REFERENCE_MODELS = {
-    "mBART-50":    "facebook/mbart-large-50-many-to-many-mmt",
-    "NLLB-200":    "facebook/nllb-200-distilled-600M",
-    "BanglaBERT":  "sagorsarker/bangla-bert-base",
-    "GPT-2":       "gpt2",
+    "mBART-50":   "facebook/mbart-large-50-many-to-many-mmt",
+    "NLLB-200":   "facebook/nllb-200-distilled-600M",
+    "BanglaBERT": "sagorsarker/bangla-bert-base",
+    "GPT-2":      "gpt2",
 }
-
-# ── Curated test sentences ─────────────────────────────────────────────────
 
 TEST_SENTENCES = {
     "bangla_formal": [
@@ -92,30 +81,38 @@ TEST_SENTENCES = {
     ],
 }
 
+# Sanity: quick per-sentence decode + special token checks (moved from wrapper)
+SANITY_SENTENCES = [
+    ("Bangla",     "আমি বাংলাদেশের মানুষ।"),
+    ("English",    "Hello, how are you?"),
+    ("Banglish",   "ami tomake bhalobashi"),
+    ("Code-mixed", "এই product টা really ভালো।"),
+]
+
+SANITY_SPECIAL_TOKENS = [
+    "<pad>", "<unk>", "<s>", "</s>", "<|im_start|>",
+    "<|lang_bn|>", "<|reserved_0|>", "<|reserved_99|>",
+]
+
 
 # ── Tokenizer loading ──────────────────────────────────────────────────────
 
-def load_tokenizers(skip_references: bool = False) -> Dict:
-    """Load BanglaGamba + reference tokenizers."""
+def load_tokenizers(skip_references: bool = False) -> dict:
     from transformers import AutoTokenizer, PreTrainedTokenizerFast
 
     tokenizers = {}
 
-    # BanglaGamba
     print("Loading BanglaGamba tokenizer...")
     if BANGLA_GAMBA_TOKENIZER.exists():
-        tokenizers["BanglaGamba"] = PreTrainedTokenizerFast.from_pretrained(
-            str(BANGLA_GAMBA_TOKENIZER)
-        )
+        tokenizers["BanglaGamba"] = PreTrainedTokenizerFast.from_pretrained(str(BANGLA_GAMBA_TOKENIZER))
         print(f"  [OK] BanglaGamba (vocab={tokenizers['BanglaGamba'].vocab_size})")
     else:
-        print(f"  [SKIP] HF tokenizer not found at {BANGLA_GAMBA_TOKENIZER}")
-        print("  Run: python -m src.tokenizer.wrapper --spm-model saved/tokenizer/banglagamba_tokenizer.model --output-dir saved/tokenizer/hf --test")
+        print(f"  [SKIP] Not found at {BANGLA_GAMBA_TOKENIZER}")
+        print("  Run: python -m src.tokenizer.wrapper --spm-model saved/tokenizer/banglagamba_tokenizer.model")
 
     if skip_references:
         return tokenizers
 
-    # Reference tokenizers
     for name, model_id in REFERENCE_MODELS.items():
         try:
             print(f"Loading {name} ({model_id})...")
@@ -129,29 +126,24 @@ def load_tokenizers(skip_references: bool = False) -> Dict:
 
 # ── Corpus sampling ────────────────────────────────────────────────────────
 
-def sample_corpus(
-    path: Path, n: int = 10_000, seed: int = 42
-) -> List[str]:
-    """Sample n docs from a JSONL file (reservoir sampling for large files)."""
+def sample_corpus(path: Path, n: int = 10_000, seed: int = 42) -> list[str]:
+    """Reservoir-sample n docs from a JSONL file."""
     if not path.exists():
         print(f"  [SKIP] Corpus not found: {path}")
         return []
 
     random.seed(seed)
-    samples = []
-    total = 0
+    samples, total = [], 0
 
-    with open(path, "r") as f:
+    with open(path) as f:
         for line in f:
             total += 1
             try:
-                doc = json.loads(line)
+                text = json.loads(line).get("text", "").strip()
             except json.JSONDecodeError:
                 continue
-            text = doc.get("text", "").strip()
             if not text:
                 continue
-
             if len(samples) < n:
                 samples.append(text)
             else:
@@ -165,247 +157,180 @@ def sample_corpus(
 
 # ── Metrics ────────────────────────────────────────────────────────────────
 
-def compute_metrics(tokenizer, texts: List[str]) -> Dict:
-    """Compute fertility, compression, UNK rate, and speed."""
-    total_tokens = 0
-    total_words = 0
-    total_chars = 0
-    total_unk = 0
-    total_special = 0
-    n = len(texts)
+def compute_metrics(tokenizer, texts: list[str]) -> dict:
+    total_tokens = total_words = total_chars = total_unk = 0
+    unk_id = tokenizer.unk_token_id or 0
 
     t0 = time.time()
     for text in texts:
-        # Tokenize without special tokens for fertility/compression
         ids = tokenizer.encode(text, add_special_tokens=False)
-        unk_id = tokenizer.unk_token_id or 0
-
         total_tokens += len(ids)
-        total_unk += sum(1 for t in ids if t == unk_id)
-        total_words += max(len(text.split()), 1)
-        total_chars += len(text)
+        total_unk    += sum(1 for t in ids if t == unk_id)
+        total_words  += max(len(text.split()), 1)
+        total_chars  += len(text)
     elapsed = time.time() - t0
 
-    avg_tokens = total_tokens / max(n, 1)
-    fertility = total_tokens / max(total_words, 1)
-    compression = total_chars / max(total_tokens, 1)
-    unk_rate = total_unk / max(total_tokens, 1) * 100
-    speed = n / max(elapsed, 1e-6)
-
+    n = max(len(texts), 1)
     return {
-        "docs": n,
-        "total_tokens": total_tokens,
-        "avg_tokens_per_doc": round(avg_tokens, 1),
-        "fertility": round(fertility, 3),
-        "compression": round(compression, 2),
-        "unk_rate_pct": round(unk_rate, 4),
-        "docs_per_sec": round(speed, 1),
+        "docs":               n,
+        "total_tokens":       total_tokens,
+        "avg_tokens_per_doc": round(total_tokens / n, 1),
+        "fertility":          round(total_tokens / max(total_words, 1), 3),
+        "compression":        round(total_chars  / max(total_tokens, 1), 2),
+        "unk_rate_pct":       round(total_unk    / max(total_tokens, 1) * 100, 4),
+        "docs_per_sec":       round(n / max(elapsed, 1e-6), 1),
     }
 
 
-# ── Category tests ─────────────────────────────────────────────────────────
+# ── Category / corpus runners ──────────────────────────────────────────────
 
-def run_category_tests(tokenizers: Dict) -> Dict[str, Dict]:
-    """Test each tokenizer on curated sentences."""
-    results = {}
-
-    for category, sentences in TEST_SENTENCES.items():
-        results[category] = {}
-        for tok_name, tok in tokenizers.items():
-            results[category][tok_name] = compute_metrics(tok, sentences)
-
-    return results
+def run_category_tests(tokenizers: dict, categories: list[str] | None = None) -> dict:
+    cats = {k: TEST_SENTENCES[k] for k in (categories or TEST_SENTENCES) if k in TEST_SENTENCES}
+    return {
+        cat: {name: compute_metrics(tok, sents) for name, tok in tokenizers.items()}
+        for cat, sents in cats.items()
+    }
 
 
-# ── Corpus tests ───────────────────────────────────────────────────────────
-
-def run_corpus_tests(
-    tokenizers: Dict, sample_size: int = 10_000
-) -> Dict[str, Dict]:
-    """Test each tokenizer on sampled corpus data."""
+def run_corpus_tests(tokenizers: dict, sample_size: int = 10_000) -> dict:
     print(f"\nSampling {sample_size:,} docs from each corpus...")
-    bangla_samples = sample_corpus(BANGLA_CORPUS, n=sample_size)
-    english_samples = sample_corpus(ENGLISH_CORPUS, n=sample_size)
+    corpora = {
+        "corpus_bangla":   sample_corpus(BANGLA_CORPUS,  n=sample_size),
+        "corpus_english":  sample_corpus(ENGLISH_CORPUS, n=sample_size),
+    }
+    return {
+        label: {name: compute_metrics(tok, samples) for name, tok in tokenizers.items()}
+        for label, samples in corpora.items()
+        if samples
+    }
 
-    results = {}
-    if bangla_samples:
-        results["corpus_bangla"] = {}
-        for tok_name, tok in tokenizers.items():
-            results["corpus_bangla"][tok_name] = compute_metrics(tok, bangla_samples)
 
-    if english_samples:
-        results["corpus_english"] = {}
-        for tok_name, tok in tokenizers.items():
-            results["corpus_english"][tok_name] = compute_metrics(tok, english_samples)
+# ── Sanity tests (absorbed from wrapper._test_tokenizer) ──────────────────
 
-    return results
+def run_sanity_tests(tokenizer) -> None:
+    print(f"\n{'=' * 60}\n  Sanity Tests\n{'=' * 60}\n")
+
+    for label, text in SANITY_SENTENCES:
+        ids = tokenizer.encode(text, add_special_tokens=False)
+        words = len(text.split())
+        print(f"  [{label}]")
+        print(f"    Input:   {text}")
+        print(f"    Tokens:  {len(ids)} tok / {words} words = {len(ids)/max(words,1):.2f} fertility")
+        print(f"    IDs:     {ids[:10]}{'...' if len(ids) > 10 else ''}")
+        print(f"    Decoded: {tokenizer.decode(ids, skip_special_tokens=True)}\n")
+
+    print("  Special token spot-check:")
+    for tok in SANITY_SPECIAL_TOKENS:
+        tid  = tokenizer.convert_tokens_to_ids(tok)
+        fail = tid == tokenizer.unk_token_id and tok != tokenizer.unk_token
+        print(f"    {'[FAIL]' if fail else '[OK]'} {tok:30s} -> ID {tid}")
+
+    print()
+    try:
+        chat_text = tokenizer.apply_chat_template(
+            [
+                {"role": "system", "content": "তুমি একটি সহায়ক বাংলা ভাষার মডেল।"},
+                {"role": "user",   "content": "আমাকে সাহায্য করো।"},
+            ],
+            tokenize=False, add_generation_prompt=True,
+        )
+        assert "<|im_start|>" in chat_text
+        print("  Chat template output:")
+        for line in chat_text.splitlines():
+            print(f"    {line}")
+        print("\n  [OK] Chat template works correctly.")
+    except Exception as e:
+        print(f"  [FAIL] Chat template: {e}")
 
 
 # ── Output ─────────────────────────────────────────────────────────────────
 
-def print_comparison_table(results: Dict[str, Dict], title: str):
-    """Print a formatted comparison table."""
-    # Collect all tokenizer names
-    all_toks = set()
-    for cat_results in results.values():
-        all_toks.update(cat_results.keys())
-    tok_names = sorted(all_toks)
+# ponytail: one helper drives all four metric sections instead of copy-pasted loops
+def _metric_rows(results: dict, tok_names: list[str], metric: str, fmt: str) -> None:
+    for cat, cat_res in results.items():
+        row = f"  {cat:<18}"
+        for name in tok_names:
+            val = cat_res.get(name, {}).get(metric, "—")
+            row += f" {val:>12}" if isinstance(val, str) else f" {val:>{12}{fmt}}"
+        print(row)
 
-    print(f"\n{'=' * 90}")
-    print(f"  {title}")
-    print(f"{'=' * 90}\n")
 
-    # Header
-    header = f"{'Category':<20}"
-    for name in tok_names:
-        header += f" {name:>12}"
+def print_comparison_table(results: dict, title: str) -> None:
+    tok_names = sorted({n for cr in results.values() for n in cr})
+
+    print(f"\n{'=' * 90}\n  {title}\n{'=' * 90}\n")
+    header = f"{'Category':<20}" + "".join(f" {n:>12}" for n in tok_names)
     print(header)
     print("-" * len(header))
 
-    # Fertility
-    print(f"\n  Fertility (tokens/word, lower = better)")
-    for cat, cat_results in results.items():
-        row = f"  {cat:<18}"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("fertility", "—")
-            row += f" {val:>12}" if isinstance(val, str) else f" {val:>12.3f}"
-        print(row)
-
-    # Compression
-    print(f"\n  Compression (chars/token, higher = better)")
-    for cat, cat_results in results.items():
-        row = f"  {cat:<18}"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("compression", "—")
-            row += f" {val:>12}" if isinstance(val, str) else f" {val:>12.2f}"
-        print(row)
-
-    # UNK rate
-    print(f"\n  UNK rate % (lower = better)")
-    for cat, cat_results in results.items():
-        row = f"  {cat:<18}"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("unk_rate_pct", "—")
-            row += f" {val:>12}" if isinstance(val, str) else f" {val:>12.4f}"
-        print(row)
-
-    # Speed
-    print(f"\n  Speed (docs/sec)")
-    for cat, cat_results in results.items():
-        row = f"  {cat:<18}"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("docs_per_sec", "—")
-            row += f" {val:>12}" if isinstance(val, str) else f" {val:>12.1f}"
-        print(row)
+    for label, metric, fmt in [
+        ("Fertility (tokens/word, lower = better)",    "fertility",    ".3f"),
+        ("Compression (chars/token, higher = better)", "compression",  ".2f"),
+        ("UNK rate % (lower = better)",                "unk_rate_pct", ".4f"),
+        ("Speed (docs/sec)",                           "docs_per_sec", ".1f"),
+    ]:
+        print(f"\n  {label}")
+        _metric_rows(results, tok_names, metric, fmt)
 
 
-def save_report(
-    category_results: Dict, corpus_results: Dict, all_tokenizers: Dict
-):
-    """Save a Markdown report."""
+def save_report(category_results: dict, corpus_results: dict, all_tokenizers: dict) -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     report_path = REPORT_DIR / "tokenizer_evaluation.md"
 
-    lines = []
-    lines.append("# BanglaGamba Tokenizer Evaluation\n")
-    lines.append(f"**Date:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-    lines.append("")
-
-    # Summary
-    lines.append("## Tokenizer Summary\n")
-    lines.append("| Tokenizer | Vocab Size | Type |")
-    lines.append("|---|---|---|")
-    for name, tok in all_tokenizers.items():
-        vocab = tok.vocab_size
-        tok_type = "Unigram (SP)" if name == "BanglaGamba" else "Auto"
-        lines.append(f"| {name} | {vocab:,} | {tok_type} |")
-    lines.append("")
-
-    # Curated tests
-    lines.append("## Curated Sentence Tests\n")
-    lines.append("### Fertility (tokens/word, lower = better)\n")
-    all_toks = set()
-    for cat_results in category_results.values():
-        all_toks.update(cat_results.keys())
-    tok_names = sorted(all_toks)
-
-    header = "| Category |"
-    sep = "|---|"
-    for name in tok_names:
-        header += f" {name} |"
-        sep += "---|"
-    lines.append(header)
-    lines.append(sep)
-
-    for cat, cat_results in category_results.items():
-        row = f"| {cat} |"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("fertility", "—")
-            row += f" {val:.3f} |" if isinstance(val, (int, float)) else f" {val} |"
-        lines.append(row)
-    lines.append("")
-
-    lines.append("### Compression (chars/token, higher = better)\n")
-    lines.append(header)
-    lines.append(sep)
-    for cat, cat_results in category_results.items():
-        row = f"| {cat} |"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("compression", "—")
-            row += f" {val:.2f} |" if isinstance(val, (int, float)) else f" {val} |"
-        lines.append(row)
-    lines.append("")
-
-    lines.append("### UNK Rate % (lower = better)\n")
-    lines.append(header)
-    lines.append(sep)
-    for cat, cat_results in category_results.items():
-        row = f"| {cat} |"
-        for name in tok_names:
-            val = cat_results.get(name, {}).get("unk_rate_pct", "—")
-            row += f" {val:.4f} |" if isinstance(val, (int, float)) else f" {val} |"
-        lines.append(row)
-    lines.append("")
-
-    # Corpus tests
-    if corpus_results:
-        lines.append("## Corpus Tests (sampled from cleaned data)\n")
-        lines.append("### Fertility (tokens/word)\n")
-        all_toks = set()
-        for cat_results in corpus_results.values():
-            all_toks.update(cat_results.keys())
-        tok_names = sorted(all_toks)
-
-        header = "| Corpus |"
-        sep = "|---|"
-        for name in tok_names:
-            header += f" {name} |"
-            sep += "---|"
-        lines.append(header)
-        lines.append(sep)
-
-        for cat, cat_results in corpus_results.items():
+    def md_table(results: dict, metric: str, fmt: str, tok_names: list[str]) -> list[str]:
+        header = "| Category |" + "".join(f" {n} |" for n in tok_names)
+        sep    = "|---|" + "---|" * len(tok_names)
+        rows   = []
+        for cat, cr in results.items():
             row = f"| {cat} |"
             for name in tok_names:
-                val = cat_results.get(name, {}).get("fertility", "—")
-                row += f" {val:.3f} |" if isinstance(val, (int, float)) else f" {val} |"
-            lines.append(row)
-        lines.append("")
+                val = cr.get(name, {}).get(metric, "—")
+                row += f" {val:{fmt}} |" if isinstance(val, (int, float)) else f" {val} |"
+            rows.append(row)
+        return [header, sep] + rows + [""]
+
+    lines = [
+        "# BanglaGamba Tokenizer Evaluation\n",
+        f"**Date:** {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
+        "",
+        "## Tokenizer Summary\n",
+        "| Tokenizer | Vocab Size | Type |",
+        "|---|---|---|",
+        *[f"| {n} | {tok.vocab_size:,} | {'Unigram (SP)' if n == 'BanglaGamba' else 'Auto'} |"
+          for n, tok in all_tokenizers.items()],
+        "",
+    ]
+
+    for section_label, results in [
+        ("## Curated Sentence Tests", category_results),
+        ("## Corpus Tests (sampled from cleaned data)", corpus_results),
+    ]:
+        if not results:
+            continue
+        tok_names = sorted({n for cr in results.values() for n in cr})
+        lines.append(f"{section_label}\n")
+        for title, metric, fmt in [
+            ("Fertility (tokens/word, lower = better)",    "fertility",    ".3f"),
+            ("Compression (chars/token, higher = better)", "compression",  ".2f"),
+            ("UNK Rate % (lower = better)",                "unk_rate_pct", ".4f"),
+        ]:
+            lines += [f"### {title}\n"] + md_table(results, metric, fmt, tok_names)
 
     # Detailed metrics
     lines.append("## Detailed Metrics\n")
-    for category_results_set in [category_results, corpus_results]:
-        for cat, cat_results in category_results_set.items():
-            lines.append(f"### {cat}\n")
-            lines.append("| Metric |" + "".join(f" {n} |" for n in sorted(cat_results.keys())))
-            lines.append("|---|" + "".join("---|" for _ in cat_results))
-            for metric in ["fertility", "compression", "unk_rate_pct", "avg_tokens_per_doc", "docs_per_sec"]:
-                row = f"| {metric} |"
-                for name in sorted(cat_results.keys()):
-                    val = cat_results[name].get(metric, "—")
-                    row += f" {val} |"
-                lines.append(row)
-            lines.append("")
+    for results in [category_results, corpus_results]:
+        for cat, cr in results.items():
+            tok_names = sorted(cr)
+            lines += [
+                f"### {cat}\n",
+                "| Metric |" + "".join(f" {n} |" for n in tok_names),
+                "|---|" + "---|" * len(tok_names),
+                *[
+                    "| {} |".format(m) + "".join(f" {cr[n].get(m, '—')} |" for n in tok_names)
+                    for m in ["fertility", "compression", "unk_rate_pct", "avg_tokens_per_doc", "docs_per_sec"]
+                ],
+                "",
+            ]
 
     report_path.write_text("\n".join(lines))
     print(f"\n[OK] Report saved to: {report_path}")
@@ -415,50 +340,37 @@ def save_report(
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate BanglaGamba tokenizer against references.")
-    parser.add_argument("--sample-size", type=int, default=10_000,
-                        help="Number of corpus docs to sample per language.")
-    parser.add_argument("--skip-references", action="store_true",
-                        help="Skip downloading reference tokenizers (test BanglaGamba only).")
-    parser.add_argument("--categories", nargs="*",
-                        help="Run only specific category tests (e.g., bangla_formal english).")
-    parser.add_argument("--no-corpus", action="store_true",
-                        help="Skip corpus-based tests.")
+    parser.add_argument("--sample-size",     type=int, default=10_000)
+    parser.add_argument("--skip-references", action="store_true")
+    parser.add_argument("--categories",      nargs="*")
+    parser.add_argument("--no-corpus",       action="store_true")
+    parser.add_argument("--sanity",          action="store_true",
+                        help="Run quick decode/special-token/chat-template checks only.")
     args = parser.parse_args()
 
     print("=" * 60)
     print("  BanglaGamba Tokenizer Evaluation")
     print("=" * 60)
 
-    # Load tokenizers
     tokenizers = load_tokenizers(skip_references=args.skip_references)
     if not tokenizers:
-        print("ERROR: No tokenizers loaded. Run wrapper first.")
-        sys.exit(1)
+        sys.exit("ERROR: No tokenizers loaded. Run wrapper first.")
 
-    # Category tests
-    category_results = {}
-    if args.categories:
-        for cat in args.categories:
-            if cat in TEST_SENTENCES:
-                category_results[cat] = {}
-                for tok_name, tok in tokenizers.items():
-                    category_results[cat][tok_name] = compute_metrics(tok, TEST_SENTENCES[cat])
-    else:
-        category_results = run_category_tests(tokenizers)
+    if args.sanity:
+        tok = tokenizers.get("BanglaGamba")
+        if not tok:
+            sys.exit("ERROR: BanglaGamba tokenizer not loaded.")
+        run_sanity_tests(tok)
+        return
 
-    # Corpus tests
-    corpus_results = {}
-    if not args.no_corpus:
-        corpus_results = run_corpus_tests(tokenizers, sample_size=args.sample_size)
+    category_results = run_category_tests(tokenizers, args.categories)
+    corpus_results   = {} if args.no_corpus else run_corpus_tests(tokenizers, args.sample_size)
 
-    # Print results
     print_comparison_table(category_results, "Curated Sentence Tests")
     if corpus_results:
         print_comparison_table(corpus_results, "Corpus Tests")
 
-    # Save report
     save_report(category_results, corpus_results, tokenizers)
-
     print("\n[OK] Evaluation complete!")
 
 

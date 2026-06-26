@@ -39,17 +39,16 @@ except ImportError:
 def _doc_to_text(text: str) -> str:
     """Return the document text as a single training entry.
 
-    Preserves paragraph structure with newlines.  Does NOT split into
-    sentences — that inflates 2.83M docs into 82M entries and causes OOM.
-    SentencePiece builds an internal lattice per entry; fewer entries
-    means dramatically less RAM (lattice count drops 30x).
+    Joins paragraphs with spaces so the entire doc is ONE line in the
+    temp file.  SentencePiece reads by newlines, so internal \n would
+    inflate 2.83M docs into 32M+ entries and cause OOM.
     """
     lines = []
     for paragraph in text.splitlines():
         paragraph = " ".join(paragraph.split())  # normalise whitespace only
         if paragraph:
             lines.append(paragraph)
-    return "\n".join(lines)
+    return " ".join(lines)
 
 
 def _jsonl_to_txt(jsonl_path: Path, txt_path: Path) -> int:

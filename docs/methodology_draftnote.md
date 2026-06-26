@@ -156,9 +156,9 @@ Fuzzy/MinHash deduplication is deliberately **not** applied:
 The tokenizer is trained on a **sampled subset** of the downloaded data, not the full corpus.
 
 **Sampling strategy:**
-1. Sample 850M words from Bangla sources (TituLLM + Wikipedia) and 150M words from English sources (FineWeb-Edu), totaling ~1B words
-2. Shuffle-merge the two language streams with a weighted random merge (probability of selecting Bangla = 85%)
-3. The resulting corpus is a representative sample of the target 85:15 training composition
+1. Reservoir-sample 425M words from Bangla sources (TituLLM + Wikipedia) and 75M words from English sources (FineWeb-Edu), totaling 500M words (85:15 BN:EN ratio maintained)
+2. The sampler (`02_tokenizer_sampler.py`) performs uniform random sampling from cleaned JSONL files, then shuffle-merges the two language streams with a weighted random merge (probability of selecting Bangla = 85%)
+3. The resulting corpus is a representative sample of the target 85:15 training composition: 1,249,199 Bangla docs + 96,205 English docs = 1,345,404 docs total (7.4 GB JSONL)
 
 **Tokenizer configuration:**
 
@@ -169,7 +169,13 @@ The tokenizer is trained on a **sampled subset** of the downloaded data, not the
 | Character coverage | 0.9999 |
 | Byte fallback | Yes (handles out-of-vocabulary characters) |
 | Normalization rule | Identity (no internal NFC — applied externally) |
-| Input sentence size | 50,000,000 sentences sampled |
+| Input sentence size | 0 (all entries loaded; no reservoir sampling) |
+| Max sentence length | 65,536 chars (3,036 long docs skipped) |
+| Corpus entries | 1,345,404 docs (500M words, ~3.1B chars, ~7.3 GB text) |
+
+**Extraction method:** Each JSONL document is written as a single training entry — paragraphs are joined with spaces (not newlines) and no sentence-level splitting is applied. This is critical for memory: SentencePiece builds an internal lattice per training entry, so splitting 1.35M docs into sentences (as initially attempted) inflates the entry count to 32.5M, increasing per-entry lattice overhead by 24x and causing OOM. The doc-level approach keeps entry count at 1.35M, matching the actual document count.
+
+**Training memory requirements:** The SentencePiece Unigram algorithm loads the entire corpus into a `vector<string>` and builds frequency tables and a subword lattice whose size is proportional to total character count. For 500M words (~3.1B characters, ~7.3 GB text), peak memory consumption during training reached approximately 32 GB RAM + 110 GB swap (of 120 GB total swap configured on a system with 32 GB physical RAM). The `train_extremely_large_corpus` flag was enabled. Training completed in approximately 3–4 hours on the full 1.35M-entry corpus.
 
 The Unigram model is chosen over BPE because it provides:
 - Probabilistic tokenization (each subword has a probability)
@@ -235,7 +241,7 @@ Post-download:
   6. python scripts/pipeline/01c_bn_normalize.py              ← one-time Bangla normalization
 
 Tokenizer training:
-  7. python scripts/pipeline/02_tokenizer_sampler.py           ← sample 1B words (85:15 BN:EN)
+  7. python scripts/pipeline/02_tokenizer_sampler.py           ← sample 500M words (85:15 BN:EN)
   8. python -m src.tokenizer.train_tokenizer                  ← train SentencePiece Unigram
   9. python -m src.tokenizer.wrapper                          ← wrap .model → HF tokenizer
 

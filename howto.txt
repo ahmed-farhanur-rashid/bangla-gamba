@@ -1,0 +1,70 @@
+============================================================
+  Bangla Gamba — Data Pipeline
+============================================================
+  Target: 8-10B of total tokens maintaining 85:15 Bng:Eng ratio
+  Sources: Titullm CC + Fineweb-edu + BanglaNMT + NLLB
+
+
+============================================================
+  STEP 1: Download Datasets
+============================================================
+  python scripts/downloaders/01a_download_titulm_cc.py
+  python scripts/downloaders/01b_download_wikipedia.py
+  python scripts/downloaders/02a_download_english.py --word-budget 2_000_000_000
+  python scripts/downloaders/03a_download_banglanmt.py
+  python scripts/downloaders/03b_download_nllb.py
+
+
+============================================================
+  STEP 2: Dedup & check quality
+============================================================
+  python scripts/pipeline/01a_dedup_nmt.py
+  python scripts/pipeline/01b_dedup_mono.py
+
+
+============================================================
+  STEP 3: Sample Tokenizer Training Set & Train tokenizer 
+============================================================
+  python scripts/pipeline/02_tokenizer_sampler.py \
+      --total-words 500_000_000 \
+      --ratio 0.85 && \
+  python3 -m src.tokenizer.train_tokenizer \
+      --input saved/data/tokenizer_set/corpus.jsonl \
+      --jsonl \
+      --output-dir saved/tokenizer \
+      --input-sentence-size 0 \
+      --max-sentence-length 65536 \
+      --num-threads 4 2>&1 | tee saved/logs/tokenizer_train.log
+
+
+===================================================
+  Step 4: Post Tokenizer Training            
+===================================================
+  1. Wrap the SPM model into HF format
+
+  python -m src.tokenizer.wrapper \
+    --spm-model saved/tokenizer/banglagamba_tokenizer.model \
+    --output-dir saved/tokenizer/hf
+
+  2. Quick sanity check (decode, special tokens, chat template)
+
+  python scripts/util/evaluate_tokenizer.py \
+    --sanity --skip-references
+
+  3. Full evaluation against reference tokenizers
+
+  python scripts/util/evaluate_tokenizer.py
+
+  4. Wrap + sanity in one shot
+
+  python -m src.tokenizer.wrapper \
+    --spm-model saved/tokenizer/banglagamba_tokenizer.model \
+    --output-dir saved/tokenizer/hf \
+    --test
+
+
+  Optional flags for evaluate_tokenizer:
+    --skip-references          skip downloading reference models
+    --categories bangla_formal english   run specific categories only
+    --sample-size 5000         smaller corpus sample
+    --no-corpus                skip corpus tests, curated sentences only
