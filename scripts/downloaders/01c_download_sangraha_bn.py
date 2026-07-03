@@ -41,25 +41,7 @@ SPLIT = "ben"
 
 # Known doc count from HF API (verified/ben split).
 # Update this if the dataset changes.
-KNOWN_DOC_COUNT = 738_322
-
-
-def get_verified_ben_doc_count() -> int:
-    """Fetch actual doc count from HuggingFace API. Falls back to known count."""
-    try:
-        import requests
-        r = requests.get(
-            "https://datasets-server.huggingface.co/info?dataset=ai4bharat/sangraha&config=verified",
-            timeout=10,
-        )
-        data = r.json()
-        splits = data.get("dataset_info", {}).get("splits", {})
-        if "ben" in splits:
-            return splits["ben"].get("num_examples", KNOWN_DOC_COUNT)
-    except Exception as e:
-        print(f"[sangraha] Could not fetch doc count from HF API: {e}")
-    return KNOWN_DOC_COUNT
-
+KNOWN_DOC_COUNT = 9_530_000
 
 def main():
     parser = argparse.ArgumentParser(description="Download Sangraha Verified Bengali.")
@@ -74,7 +56,7 @@ def main():
     existing = count_lines(OUTPUT)
 
     # Pre-count from HF API
-    total_docs = get_verified_ben_doc_count()
+    total_docs = KNOWN_DOC_COUNT
     print(f"[sangraha] Verified/Ben split: ~{total_docs:,} docs")
     print(f"[sangraha] Already downloaded: {existing:,} docs")
 
