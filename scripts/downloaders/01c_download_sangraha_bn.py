@@ -15,10 +15,12 @@ Output (v3 schema):
 
 Usage:
   python scripts/downloaders/01c_download_sangraha_bn.py
+  python scripts/downloaders/01c_download_sangraha_bn.py --max-docs 738322
 """
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 from tqdm import tqdm
@@ -34,17 +36,47 @@ SOURCE_TYPE = "verified_web_ocr"
 LANGUAGE_REGION = "BD"
 
 # Sangraha structure: config="verified", split="ben" (Bengali).
-# Full list of valid splits: https://huggingface.co/datasets/ai4bharat/sangraha
 CONFIG = "verified"
 SPLIT = "ben"
 
+# Known doc count from HF API (verified/ben split).
+# Update this if the dataset changes.
+KNOWN_DOC_COUNT = 738_322
+
+
+def get_verified_ben_doc_count() -> int:
+    """Fetch actual doc count from HuggingFace API. Falls back to known count."""
+    try:
+        from huggingface_hub import HfApi
+        api = HfApi()
+        info = api.dataset_info("ai4bharat/sangraha")
+        for key, split_info in info.splits.items():
+            if key == "ben" and hasattr(split_info, "num_examples"):
+                return split_info.num_examples
+    except Exception as e:
+        print(f"[sangraha] Could not fetch doc count from HF API: {e}")
+    return KNOWN_DOC_COUNT
+
 
 def main():
+    parser = argparse.ArgumentParser(description="Download Sangraha Verified Bengali.")
+    parser.add_argument("--max-docs", type=int, default=None,
+                        help="Stop after N docs (safety cap).")
+    args = parser.parse_args()
+
     from datasets import load_dataset
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
     existing = count_lines(OUTPUT)
+
+    # Pre-count from HF API
+    total_docs = get_verified_ben_doc_count()
+    print(f"[sangraha] Verified/Ben split: ~{total_docs:,} docs")
+    print(f"[sangraha] Already downloaded: {existing:,} docs")
+
+    if args.max_docs:
+        print(f"[sangraha] Max docs cap: {args.max_docs:,}")
 
     print(f"[sangraha] Loading config={CONFIG!r}, split={SPLIT!r} — "
           f"verify this looks right before leaving this running unattended.")
@@ -52,15 +84,22 @@ def main():
     ds = load_dataset("ai4bharat/sangraha", CONFIG,
                        split=SPLIT, streaming=True)
 
+    # Compute effective total for tqdm
+    if existing > 0:
+        effective_total = total_docs
+    else:
+        effective_total = total_docs
+
     with open(OUTPUT, "a") as f:
-        bar = tqdm(desc="Sangraha Verified BN", unit="docs", unit_scale=True,
-                   initial=existing)
+        bar = tqdm(total=effective_total, desc="Sangraha Verified BN",
+                   unit="docs", unit_scale=True, initial=existing)
         written = 0
         skip = existing
-        printed_sample = existing > 0  # skip sample print on resume
+        printed_sample = existing > 0
         for row in ds:
             text = normalize_doc(row.get("text", ""))
             if not has_min_words(text):
+                bar.update(1)
                 continue
             if not printed_sample:
                 print(f"\n[sangraha] SAMPLE DOC (verify this is Bengali, not Assamese):\n"
@@ -75,11 +114,17 @@ def main():
                       LANGUAGE_REGION, n)
             written += 1
             bar.update(1)
+
+            if args.max_docs and written >= args.max_docs:
+                print(f"\n[sangraha] Reached max-docs cap ({args.max_docs:,})")
+                break
+
         bar.close()
 
     size_gb = OUTPUT.stat().st_size / (1024 ** 3)
     count = count_lines(OUTPUT)
     print(f"  \u2713 sangraha_verified_bn \u2192 {OUTPUT}  ({count:,} docs, {size_gb:.1f} GB)")
+    print(f"  Session written: {written:,} docs")
 
 
 if __name__ == "__main__":
