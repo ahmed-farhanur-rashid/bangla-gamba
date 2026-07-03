@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bangla normalization pass using bnunicodenormalizer.
+Bangla normalization pass using bn-normalize-rs (Rust).
 
 Reads from deduped/, writes to cleaned/.
 Run after dedup (01b, 01c) to apply full Bangla-specific normalization.
@@ -20,9 +20,9 @@ import time
 from pathlib import Path
 
 try:
-    from bnunicodenormalizer import Normalizer
+    import bn_normalize_rs
 except ImportError:
-    print("pip install bnunicodenormalizer")
+    print("Install Rust normalizer: cd bn-normalizer-rs && pip install -e .")
     sys.exit(1)
 
 DEDUPED_DIR = Path("saved/data/deduped")
@@ -36,7 +36,7 @@ DEFAULT_FILES = [
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Apply bnunicodenormalizer to Bangla text in deduped JSONL files."
+        description="Apply bn-normalize-rs (Rust) to Bangla text in deduped JSONL files."
     )
     p.add_argument(
         "--files",
@@ -57,9 +57,15 @@ def parse_args():
         help="Single output file (used with --input)",
     )
     p.add_argument(
-        "--prefix",
-        default="<|lang_bn|>",
-        help="Token prefix to strip/re-add (default: <|lang_bn|>)",
+        "--none-policy",
+        default="keep_original",
+        choices=["drop", "keep_original", "error", "collect"],
+        help="What to do when a Bangla word normalizes to None (default: keep_original)",
+    )
+    p.add_argument(
+        "--allow-english",
+        action="store_true",
+        help="Treat English characters as valid in word normalization",
     )
     p.add_argument(
         "--dry-run",
@@ -69,31 +75,12 @@ def parse_args():
     return p.parse_args()
 
 
-def normalize_words(norm: Normalizer, text: str, prefix: str) -> str:
-    """Strip prefix, normalize each word, re-add prefix."""
-    stripped = text
-    had_prefix = stripped.startswith(prefix)
-    if had_prefix:
-        stripped = stripped[len(prefix):].lstrip()
-
-    words = stripped.split()
-    normalized = []
-    for w in words:
-        result = norm(w)
-        if isinstance(result, dict):
-            n = result.get("normalized") or result.get("text") or w
-            normalized.append(n)
-        else:
-            normalized.append(result if result else w)
-
-    out = " ".join(normalized)
-    if had_prefix:
-        out = prefix + " " + out
-    return out
+def normalize_text(text: str) -> str:
+    """Normalize a full text string using the Rust normalizer."""
+    return bn_normalize_rs.normalize_sentence(text, "keep_original", False)
 
 
-def process_file(input_path: Path, output_path: Path, norm: Normalizer,
-                 prefix: str, dry_run: bool) -> dict:
+def process_file(input_path: Path, output_path: Path, dry_run: bool) -> dict:
     """Read input, normalize, write to output."""
     stats = {"read": 0, "normalized": 0, "skipped": 0, "bytes": input_path.stat().st_size}
 
@@ -120,7 +107,7 @@ def process_file(input_path: Path, output_path: Path, norm: Normalizer,
                 fout.write(line)
                 continue
 
-            doc["text"] = normalize_words(norm, doc["text"], prefix)
+            doc["text"] = normalize_text(doc["text"])
             fout.write(json.dumps(doc, ensure_ascii=False) + "\n")
             stats["normalized"] += 1
 
@@ -129,7 +116,6 @@ def process_file(input_path: Path, output_path: Path, norm: Normalizer,
 
 def main():
     args = parse_args()
-    norm = Normalizer()
 
     # Build file list: (input_path, output_path) pairs
     if args.input and args.output:
@@ -163,7 +149,7 @@ def main():
             continue
 
         print(f"  {input_path.name} → {output_path.name}")
-        s = process_file(input_path, output_path, norm, args.prefix, args.dry_run)
+        s = process_file(input_path, output_path, args.dry_run)
         mb = s["bytes"] / 1e6
         print(f"    {s['normalized']:,} normalized, "
               f"{s['skipped']:,} skipped ({mb:.0f} MB)")
