@@ -50,9 +50,15 @@ def load_base_hashes(base_path: Path) -> set[bytes]:
         print(f"[dedup_sangraha] WARNING: base file not found: {base_path}")
         return hashes
 
+    print(f"[dedup_sangraha] Counting base docs ...")
+    total = 0
+    with open(base_path, "rb") as f:
+        for _ in f:
+            total += 1
+
     print(f"[dedup_sangraha] Loading base hashes from {base_path} ...")
     with open(base_path, "r") as f:
-        for line in f:
+        for line in tqdm(f, total=total, desc="Loading base hashes", unit="docs", unit_scale=True):
             try:
                 doc = json.loads(line)
                 text = doc.get("text", "")
