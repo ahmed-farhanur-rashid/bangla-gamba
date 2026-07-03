@@ -1,15 +1,22 @@
 """
-Cross-source monolingual dedup — TituLLM ∩ Wiki Bangla.
+Cross-source monolingual dedup — TituLLM ∩ Wiki Bangla ∩ Sangraha Verified.
 
 Exact dedup via SHA-256 on text content.
-Catches documents that appear in both TituLLM and Wikipedia.
+Catches documents that appear in multiple sources.
+Also applies full Bangla normalization (bnunicodenormalizer) on write,
+so the separate 01d_bn_normalize.py step is no longer needed.
 
-Input:  saved/data/raw/titullm.jsonl + saved/data/raw/wiki_bangla.jsonl
+Priority order: wiki_bangla > titullm > sangraha_verified
+(First source wins on conflict; later duplicates are dropped.)
+
+Input:  saved/data/raw/wiki_bangla.jsonl
+        saved/data/raw/titullm_cc.jsonl
+        saved/data/raw/sangraha_verified_bn.jsonl
 Output: saved/data/cleaned/bangla.jsonl
 
 Usage:
-  python scripts/pipeline/01b_dedup_mono.py
-  python scripts/pipeline/01b_dedup_mono.py --delete-raw
+  python scripts/pipeline/01b_dedup_mono_bn.py
+  python scripts/pipeline/01b_dedup_mono_bn.py --delete-raw
 """
 
 from __future__ import annotations
@@ -19,10 +26,17 @@ import hashlib
 import json
 import re
 import shutil
+import sys
 import unicodedata
 from pathlib import Path
 
 from tqdm import tqdm
+
+try:
+    from bnunicodenormalizer import Normalizer
+except ImportError:
+    print("pip install bnunicodenormalizer")
+    sys.exit(1)
 
 RAW_DIR = Path("saved/data/raw")
 CLEANED_DIR = Path("saved/data/cleaned")
@@ -31,6 +45,7 @@ OUTPUT = CLEANED_DIR / "bangla.jsonl"
 SOURCES = [
     ("wiki_bangla", RAW_DIR / "wiki_bangla.jsonl"),
     ("titullm", RAW_DIR / "titullm_cc.jsonl"),
+    ("sangraha_verified", RAW_DIR / "sangraha_verified_bn.jsonl"),
 ]
 
 
@@ -42,12 +57,39 @@ def normalize_for_hash(text: str) -> bytes:
     return text.encode("utf-8")
 
 
+LANG_BN = "<|lang_bn|>"
+
+
+def normalize_words(norm: Normalizer, text: str) -> str:
+    """Strip <|lang_bn|> prefix, normalize each word, re-add prefix."""
+    stripped = text
+    had_prefix = stripped.startswith(LANG_BN)
+    if had_prefix:
+        stripped = stripped[len(LANG_BN):].lstrip()
+
+    words = stripped.split()
+    normalized = []
+    for w in words:
+        result = norm(w)
+        if isinstance(result, dict):
+            n = result.get("normalized") or result.get("text") or w
+            normalized.append(n)
+        else:
+            normalized.append(result if result else w)
+
+    out = " ".join(normalized)
+    if had_prefix:
+        out = LANG_BN + " " + out
+    return out
+
+
 def main():
     parser = argparse.ArgumentParser(description="Cross-source monolingual dedup.")
     parser.add_argument("--delete-raw", action="store_true",
                         help="Delete Bangla raw files after dedup.")
     args = parser.parse_args()
 
+    norm = Normalizer()
     CLEANED_DIR.mkdir(parents=True, exist_ok=True)
 
     # Check inputs exist
@@ -87,12 +129,12 @@ def main():
                             continue
 
                         text = doc.get("text", "")
-                        norm = normalize_for_hash(text)
-                        if not norm:
+                        hash_bytes = normalize_for_hash(text)
+                        if not hash_bytes:
                             empty_text += 1
                             continue
 
-                        h = hashlib.sha256(norm).digest()
+                        h = hashlib.sha256(hash_bytes).digest()
 
                         if h in seen_hashes:
                             dupes_by_source[source_name] += 1
@@ -100,7 +142,8 @@ def main():
                             continue
                         seen_hashes[h] = source_name
 
-                        fout.write(line)
+                        doc["text"] = normalize_words(norm, text)
+                        fout.write(json.dumps(doc, ensure_ascii=False) + "\n")
                         kept += 1
 
     # Stats

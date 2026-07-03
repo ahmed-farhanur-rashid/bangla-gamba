@@ -88,7 +88,7 @@ def process_file(path: Path, norm: Normalizer, prefix: str, dry_run: bool) -> di
             for line in f:
                 stats["read"] += 1
                 doc = json.loads(line)
-                if doc.get("language_region", "").startswith("bn"):
+                if doc.get("language_region", "").startswith("BD"):
                     stats["normalized"] += 1
                 else:
                     stats["skipped"] += 1
@@ -101,7 +101,7 @@ def process_file(path: Path, norm: Normalizer, prefix: str, dry_run: bool) -> di
             stats["read"] += 1
             doc = json.loads(line)
 
-            if not doc.get("language_region", "").startswith("bn"):
+            if not doc.get("language_region", "").startswith("BD"):
                 stats["skipped"] += 1
                 fout.write(line)
                 continue

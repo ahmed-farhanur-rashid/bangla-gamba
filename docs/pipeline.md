@@ -1,7 +1,7 @@
 # Data Pipeline
 
 > **Target:** 8–10B tokens · 85% Bangla / 15% English  
-> **Sources:** TituLLM CC · FineWeb-Edu · BanglaNMT · NLLB
+> **Sources:** TituLLM CC · Sangraha Verified · FineWeb-Edu · BanglaNMT · NLLB
 
 ---
 
@@ -9,7 +9,8 @@
 
 ```bash
 python scripts/downloaders/01a_download_titulm_cc.py
-python scripts/downloaders/01b_download_wikipedia.py
+python scripts/downloaders/01b_download_wikipedia_bn.py
+python scripts/downloaders/01c_download_sangraha_bn.py
 python scripts/downloaders/02a_download_english.py --word-budget 2_000_000_000
 python scripts/downloaders/03a_download_banglanmt.py
 python scripts/downloaders/03b_download_nllb.py
