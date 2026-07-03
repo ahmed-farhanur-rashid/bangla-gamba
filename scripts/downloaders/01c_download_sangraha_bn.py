@@ -47,12 +47,15 @@ KNOWN_DOC_COUNT = 738_322
 def get_verified_ben_doc_count() -> int:
     """Fetch actual doc count from HuggingFace API. Falls back to known count."""
     try:
-        from huggingface_hub import HfApi
-        api = HfApi()
-        info = api.dataset_info("ai4bharat/sangraha")
-        for key, split_info in info.splits.items():
-            if key == "ben" and hasattr(split_info, "num_examples"):
-                return split_info.num_examples
+        import requests
+        r = requests.get(
+            "https://datasets-server.huggingface.co/info?dataset=ai4bharat/sangraha&config=verified",
+            timeout=10,
+        )
+        data = r.json()
+        splits = data.get("dataset_info", {}).get("splits", {})
+        if "ben" in splits:
+            return splits["ben"].get("num_examples", KNOWN_DOC_COUNT)
     except Exception as e:
         print(f"[sangraha] Could not fetch doc count from HF API: {e}")
     return KNOWN_DOC_COUNT
