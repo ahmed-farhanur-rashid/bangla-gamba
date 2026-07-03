@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-One-time Bangla normalization pass using bnunicodenormalizer.
+Bangla normalization pass using bnunicodenormalizer.
 
-Downloads now use NFC only (fast). Run this script after all downloads
-complete to apply full Bangla-specific normalization to raw JSONL files.
+Reads from deduped/, writes to cleaned/.
+Run after dedup (01b, 01c) to apply full Bangla-specific normalization.
 
 Usage:
-    python scripts/pipeline/bn_normalize.py                          # default: all files
-    python scripts/pipeline/bn_normalize.py --files saved/data/raw/titullm.jsonl
+    python scripts/pipeline/01d_bn_normalize.py                                    # both files
+    python scripts/pipeline/01d_bn_normalize.py --files deduped/bangla_deduped.jsonl
+    python scripts/pipeline/01d_bn_normalize.py --input deduped/sangraha_deduped.jsonl --output cleaned/sangraha.jsonl
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -25,23 +25,36 @@ except ImportError:
     print("pip install bnunicodenormalizer")
     sys.exit(1)
 
-RAW_DIR = Path("saved/data/raw")
+DEDUPED_DIR = Path("saved/data/deduped")
+CLEANED_DIR = Path("saved/data/cleaned")
 
 DEFAULT_FILES = [
-    "saved/data/raw/titullm.jsonl",
-    "saved/data/raw/wiki_bangla.jsonl",
+    "saved/data/deduped/bangla_deduped.jsonl",
+    "saved/data/deduped/sangraha_deduped.jsonl",
 ]
 
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Apply bnunicodenormalizer to Bangla text in raw JSONL files."
+        description="Apply bnunicodenormalizer to Bangla text in deduped JSONL files."
     )
     p.add_argument(
         "--files",
         nargs="+",
-        default=DEFAULT_FILES,
-        help="JSONL files to normalize (default: titullm + wiki_bangla)",
+        default=None,
+        help="Deduped JSONL files to normalize (default: all in deduped/)",
+    )
+    p.add_argument(
+        "--input",
+        type=str,
+        default=None,
+        help="Single input file (alternative to --files)",
+    )
+    p.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Single output file (used with --input)",
     )
     p.add_argument(
         "--prefix",
@@ -79,12 +92,13 @@ def normalize_words(norm: Normalizer, text: str, prefix: str) -> str:
     return out
 
 
-def process_file(path: Path, norm: Normalizer, prefix: str, dry_run: bool) -> dict:
-    """Process one JSONL file in-place using a temp file."""
-    stats = {"read": 0, "normalized": 0, "skipped": 0, "bytes": path.stat().st_size}
+def process_file(input_path: Path, output_path: Path, norm: Normalizer,
+                 prefix: str, dry_run: bool) -> dict:
+    """Read input, normalize, write to output."""
+    stats = {"read": 0, "normalized": 0, "skipped": 0, "bytes": input_path.stat().st_size}
 
     if dry_run:
-        with open(path, encoding="utf-8") as f:
+        with open(input_path, encoding="utf-8") as f:
             for line in f:
                 stats["read"] += 1
                 doc = json.loads(line)
@@ -94,9 +108,9 @@ def process_file(path: Path, norm: Normalizer, prefix: str, dry_run: bool) -> di
                     stats["skipped"] += 1
         return stats
 
-    tmp = path.with_suffix(".tmp")
-    with open(path, encoding="utf-8") as fin, \
-         open(tmp, "w", encoding="utf-8") as fout:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(input_path, encoding="utf-8") as fin, \
+         open(output_path, "w", encoding="utf-8") as fout:
         for line in fin:
             stats["read"] += 1
             doc = json.loads(line)
@@ -110,7 +124,6 @@ def process_file(path: Path, norm: Normalizer, prefix: str, dry_run: bool) -> di
             fout.write(json.dumps(doc, ensure_ascii=False) + "\n")
             stats["normalized"] += 1
 
-    shutil.move(str(tmp), str(path))
     return stats
 
 
@@ -118,18 +131,41 @@ def main():
     args = parse_args()
     norm = Normalizer()
 
+    # Build file list: (input_path, output_path) pairs
+    if args.input and args.output:
+        files = [(Path(args.input), Path(args.output))]
+    elif args.files:
+        files = []
+        for f in args.files:
+            p = Path(f)
+            out = CLEANED_DIR / p.name
+            files.append((p, out))
+    else:
+        files = []
+        for f in DEFAULT_FILES:
+            p = Path(f)
+            if p.exists():
+                out = CLEANED_DIR / p.name
+                files.append((p, out))
+
+    if not files:
+        print("No files to normalize.")
+        return
+
+    CLEANED_DIR.mkdir(parents=True, exist_ok=True)
+
     total = {"read": 0, "normalized": 0, "skipped": 0, "bytes": 0}
     start = time.time()
 
-    for fname in args.files:
-        path = Path(fname)
-        if not path.exists():
-            print(f"  skipping {path} (not found)")
+    for input_path, output_path in files:
+        if not input_path.exists():
+            print(f"  skipping {input_path} (not found)")
             continue
 
-        s = process_file(path, norm, args.prefix, args.dry_run)
+        print(f"  {input_path.name} → {output_path.name}")
+        s = process_file(input_path, output_path, norm, args.prefix, args.dry_run)
         mb = s["bytes"] / 1e6
-        print(f"  {path.name}: {s['normalized']:,} normalized, "
+        print(f"    {s['normalized']:,} normalized, "
               f"{s['skipped']:,} skipped ({mb:.0f} MB)")
 
         for k in total:
@@ -140,6 +176,8 @@ def main():
     print(f"\nTotal: {total['normalized']:,} Bangla docs normalized, "
           f"{total['skipped']:,} non-Bangla skipped ({mb:.0f} MB)")
     print(f"Time: {elapsed:.1f}s")
+    if args.dry_run:
+        print("*** DRY RUN — no output written ***")
 
 
 if __name__ == "__main__":

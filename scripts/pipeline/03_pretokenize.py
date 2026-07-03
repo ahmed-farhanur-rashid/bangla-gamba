@@ -40,10 +40,10 @@ BATCH_TOKENS = SEQ_LEN * 100_000  # 204.8M tokens per shard
 SOURCE_CONFIGS = {
     "bangla": {
         "inputs": [
-            CLEANED_DIR / "bangla.jsonl",  # deduped TituLLM + Wiki
+            CLEANED_DIR / "bangla.jsonl",
         ],
         "fallback_inputs": [
-            RAW_DIR / "titullm.jsonl",     # if dedup not run yet
+            RAW_DIR / "titullm.jsonl",
             RAW_DIR / "wiki_bangla.jsonl",
         ],
         "output": PRETOKENIZED_DIR / "bangla" / "train",
@@ -57,13 +57,20 @@ SOURCE_CONFIGS = {
     },
     "nmt": {
         "inputs": [
-            CLEANED_DIR / "nmt.jsonl",     # deduped NLLB + BanglaNMT
+            CLEANED_DIR / "nmt.jsonl",
         ],
         "fallback_inputs": [
-            RAW_DIR / "nllb.jsonl",        # if dedup not run yet
+            RAW_DIR / "nllb.jsonl",
             RAW_DIR / "banglanmt.jsonl",
         ],
         "output": PRETOKENIZED_DIR / "nmt" / "train",
+    },
+    "sangraha": {
+        "inputs": [
+            CLEANED_DIR / "sangraha.jsonl",
+        ],
+        "fallback_inputs": [],
+        "output": PRETOKENIZED_DIR / "sangraha" / "train",
     },
 }
 
@@ -186,7 +193,7 @@ def main():
                         help="Stop after this many tokens (default: 10B).")
     parser.add_argument("--delete-cleaned", action="store_true",
                         help="Delete cleaned/ directory after pretokenization.")
-    parser.add_argument("--source", choices=["bangla", "english", "nmt", "all"], default="all",
+    parser.add_argument("--source", choices=["bangla", "english", "nmt", "sangraha", "all"], default="all",
                         help="Which source type to pretokenize (default: all).")
     args = parser.parse_args()
 

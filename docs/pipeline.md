@@ -21,8 +21,18 @@ python scripts/downloaders/03b_download_nllb.py
 ## Step 2 — Dedup & Quality Check
 
 ```bash
+# NMT dedup (NLLB + BanglaNMT)
 python scripts/pipeline/01a_dedup_nmt.py
-python scripts/pipeline/01b_dedup_mono.py
+
+# Bangla base dedup (wiki + titullm) → deduped/
+python scripts/pipeline/01b_dedup_mono_bn.py
+
+# Sangraha dedup against base → deduped/
+python scripts/pipeline/01c_dedup_sangraha.py
+python scripts/pipeline/01c_dedup_sangraha.py --max-words 2_000_000_000  # optional cap
+
+# Normalize deduped → cleaned/
+python scripts/pipeline/01d_bn_normalize.py
 ```
 
 ---
@@ -144,6 +154,7 @@ Run each source separately:
 
 ```bash
 python scripts/pipeline/03_pretokenize.py --source bangla
+python scripts/pipeline/03_pretokenize.py --source sangraha
 python scripts/pipeline/03_pretokenize.py --source english
 python scripts/pipeline/03_pretokenize.py --source nmt
 ```
