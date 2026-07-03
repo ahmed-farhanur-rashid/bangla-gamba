@@ -59,6 +59,7 @@ credentials.*
 data/
 AGENTS.md
 context.md
+bn-normalizer-rs/
 
 # ── Saved Artifacts (data, models, tokenizers, checkpoints) ─
 checkpoints/
