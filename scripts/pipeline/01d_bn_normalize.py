@@ -19,7 +19,10 @@ import argparse
 import json
 import sys
 import time
+import unicodedata
 from pathlib import Path
+
+from tqdm import tqdm
 
 try:
     import bn_normalize_rs
@@ -85,12 +88,8 @@ def parse_args():
 
 
 def normalize_text(text: str, none_policy: str, allow_english: bool):
-    """Normalize a full text string using the Rust normalizer.
-
-    Returns:
-        If none_policy="collect": (normalized_text, failed_tokens)
-        Otherwise: normalized_text (string)
-    """
+    """Normalize a full text string using the Rust normalizer."""
+    text = unicodedata.normalize("NFC", text)
     return bn_normalize_rs.normalize_sentence(text, none_policy, allow_english)
 
 
@@ -104,7 +103,7 @@ def process_file(input_path: Path, output_path: Path, none_policy: str,
 
     if dry_run:
         with open(input_path, encoding="utf-8") as f:
-            for line in f:
+            for line in tqdm(f, desc=f"  {input_path.stem} (dry run)", unit="docs", unit_scale=True):
                 stats["read"] += 1
                 doc = json.loads(line)
                 if doc.get("language_region", "").startswith("BD"):
@@ -123,7 +122,7 @@ def process_file(input_path: Path, output_path: Path, none_policy: str,
     try:
         with open(input_path, encoding="utf-8") as fin, \
              open(output_path, "w", encoding="utf-8") as fout:
-            for line in fin:
+            for line in tqdm(fin, desc=f"  {input_path.stem}", unit="docs", unit_scale=True):
                 stats["read"] += 1
                 doc = json.loads(line)
 

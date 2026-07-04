@@ -164,3 +164,15 @@ Or all at once:
 ```bash
 python scripts/pipeline/03_pretokenize.py
 ```
+
+
+
+
+
+
+
+# Bangla (74GB)
+python scripts/pipeline/01d_bn_normalize.py --input saved/data/deduped/bangla_deduped.jsonl --output saved/data/cleaned/bangla.jsonl
+
+# Sangraha (73GB)
+python scripts/pipeline/01d_bn_normalize.py --input saved/data/deduped/sangraha_deduped.jsonl --output saved/data/cleaned/sangraha.jsonl
