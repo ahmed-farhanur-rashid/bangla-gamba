@@ -6,12 +6,12 @@ Reads the JSONL failure log produced by 01d_bn_normalize.py with --none-policy d
 Outputs a structured YAML report to saved/reports/.
 
 Usage:
-    python -m src.utils.analyze_norm_failures
+    python -m scripts.util.analyze_norm_failures
 
-    python -m src.utils.analyze_norm_failures
+    python -m scripts.util.analyze_norm_failures
         --input saved/logs/bangla_deduped_norm_failures.jsonl
         
-    python3 -m src.utils.analyze_norm_failures
+    python3 -m scripts.util.analyze_norm_failures
         --input saved/logs/bangla_deduped_norm_failures.jsonl
         --output saved/reports/bangla_deduped_norm_failures.yaml
 """
@@ -192,7 +192,10 @@ def main():
         input_path = logs[-1]
         print(f"Using: {input_path}")
 
-    output_path = Path(args.output) if args.output else REPORT_DIR / "norm_failures.yaml"
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        output_path = REPORT_DIR / f"{input_path.stem}.yaml"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     report = analyze(input_path)
