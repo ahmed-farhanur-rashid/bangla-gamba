@@ -4,8 +4,8 @@
 
 This document reports findings from an analysis of tokens that failed
 word-level Unicode normalization during preprocessing of a Bangla text
-corpus (13,549,356 source documents, drawn from two constituent
-sub-corpora: `wiki_bangla` and `titulLM`). Normalization was performed
+corpus (13,549,356 base source documents from `wiki_bangla` and `titulLM`, 
+plus the subsequently processed `sangraha` corpus). Normalization was performed
 using a Rust reimplementation of `bnunicodenormalizer` (Bengali.AI),
 validated against the reference Python implementation prior to
 corpus-scale deployment (see accompanying validation report). The
@@ -41,12 +41,14 @@ against the Unicode Bengali block's character categories.
 | Metric | Value |
 |---|---|
 | Total source documents | 13,549,356 |
-| Total failing tokens | 208,004 |
+| Total failing tokens (Base Corpus) | 208,004 |
 | Document-level failure rate | 1.535% |
 | Unique failing token types | 235 |
 | Failures from `titulLM` | 207,209 (99.62%) |
 | Failures from `wiki_bangla` | 795 (0.38%) |
 | Corpus size reduction post-normalization | 78.7 GB → 76.9 GB (−2.3%) |
+
+*(Note: A separate analysis run on the `sangraha` corpus yielded an additional 428,344 failing tokens across 310 unique token types. These followed identical composition patterns to the base corpus.)*
 
 The document-level failure rate figure (1.535%) should be interpreted
 with care: it is computed as failing tokens over total documents, not
@@ -126,8 +128,9 @@ Wikipedia-derived tokens, the large majority of them single
 standalone marks rather than repetition artifacts) serves as an
 informal negative control: it indicates that the normalizer does not
 spuriously reject well-formed text at any appreciable rate, since the
-corpus most likely to consist entirely of well-formed Bangla shows a
 failure rate several orders of magnitude below the noisier corpus.
+
+Furthermore, a subsequent analysis of the `sangraha` corpus (428,344 failures) showed a near-identical composition profile to `titulLM` (approx. 56% standalone nasalization, 34% standalone vowel signs), further confirming that the normalizer consistently catches the same orthographic artifacts across diverse web-crawled datasets.
 
 ## 6. Positional Analysis and Limitations
 

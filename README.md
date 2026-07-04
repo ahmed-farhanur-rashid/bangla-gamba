@@ -2,7 +2,7 @@
 
 **A ~199M parameter Mamba-3 / GQA hybrid Bangla foundation model.**
 
-Formerly BanglaFM. A Bangla-centric language model pretrained from scratch on a bilingual corpus (Bangla + English.
+Formerly BanglaFM. A Bangla-centric language model pretrained from scratch on a bilingual corpus (Bangla + English).
 
 ## Architecture
 
@@ -29,6 +29,7 @@ BanglaGamba/
 │   └── default_data.yaml           # Data paths
 ├── src/
 │   ├── train.py                    # Training entry point
+│   ├── tokenizer/                  # Tokenizer training & utilities
 │   ├── model/
 │   │   ├── config.py               # BanglaGambaConfig
 │   │   ├── model.py                # BanglaGambaModel
@@ -48,10 +49,13 @@ BanglaGamba/
 │   └── utils/
 │       ├── logging.py              # Metric logging
 │       └── seed.py                 # Reproducibility
+├── pretrain-corpus-pipeline/       # Dataset download & prep scripts
+├── scripts/                        # Data packing & pretokenization
+├── tests/                          # Evaluation and verification tests
 └── docs/
-    ├── BanglaFM_Model_Implementation_Spec.md
-    ├── BanglaFM_Complete_Guide.md
-    └── BanglaFM_Q1_Data_Plan.md
+    ├── pipeline.md                 # Full data pipeline walkthrough
+    ├── methodology_draftnote.md    # Comprehensive architectural specs
+    └── preprocessing_steps_v3.md   # Text normalization details
 ```
 
 ## Quick Start
@@ -59,7 +63,7 @@ BanglaGamba/
 ```bash
 cd BanglaGamba/
 
-# Training (requires pretokenized data in data/tokenized/)
+# Training (requires pretokenized data in saved/data/pretokenized/)
 python src/train.py \
     --model configs/banglagamba_12l.yaml \
     --training configs/default_training.yaml \
