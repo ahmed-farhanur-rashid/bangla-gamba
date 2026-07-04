@@ -19,7 +19,6 @@ import argparse
 import json
 import sys
 import time
-import unicodedata
 from pathlib import Path
 
 from tqdm import tqdm
@@ -89,7 +88,6 @@ def parse_args():
 
 def normalize_text(text: str, none_policy: str, allow_english: bool):
     """Normalize a full text string using the Rust normalizer."""
-    text = unicodedata.normalize("NFC", text)
     return bn_normalize_rs.normalize_sentence(text, none_policy, allow_english)
 
 
