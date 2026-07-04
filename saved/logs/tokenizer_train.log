@@ -1,700 +1,0 @@
-============================================================
-  BanglaGamba SentencePiece Tokenizer Training
-============================================================
-  Input:      saved/data/tokenizer_set/corpus.jsonl
-  Output:     saved/tokenizer/banglagamba_tokenizer
-  Vocab:      48,000  |  Type: unigram
-  Coverage:   0.9999  |  Byte fallback: True
-  Specials:   142 user-defined symbols
-============================================================
-
-
-Extracting text from JSONL -> saved/data/tokenizer_set/_tokenizer_tmp.txt
-  (temp file -- will be deleted after training)
-  (doc-level: one entry per document, no sentence splitting)
-Extracting: 0.00docs [00:00, ?docs/s]Extracting: 648docs [00:00, 6.48kdocs/s]Extracting: 1.78kdocs [00:00, 9.31kdocs/s]Extracting: 3.06kdocs [00:00, 10.9kdocs/s]Extracting: 4.50kdocs [00:00, 12.3kdocs/s]Extracting: 6.06kdocs [00:00, 13.5kdocs/s]Extracting: 10.3kdocs [00:00, 23.3kdocs/s]Extracting: 13.0kdocs [00:00, 24.6kdocs/s]Extracting: 15.5kdocs [00:00, 22.1kdocs/s]Extracting: 17.7kdocs [00:00, 20.9kdocs/s]Extracting: 19.9kdocs [00:01, 19.9kdocs/s]Extracting: 21.9kdocs [00:01, 18.8kdocs/s]Extracting: 23.8kdocs [00:01, 19.0kdocs/s]Extracting: 26.0kdocs [00:01, 19.6kdocs/s]Extracting: 28.2kdocs [00:01, 20.5kdocs/s]Extracting: 30.7kdocs [00:01, 21.7kdocs/s]Extracting: 33.0kdocs [00:01, 22.1kdocs/s]Extracting: 35.6kdocs [00:01, 23.2kdocs/s]Extracting: 38.1kdocs [00:01, 23.6kdocs/s]Extracting: 40.6kdocs [00:02, 24.2kdocs/s]Extracting: 43.0kdocs [00:02, 23.6kdocs/s]Extracting: 45.6kdocs [00:02, 24.1kdocs/s]Extracting: 48.0kdocs [00:02, 24.1kdocs/s]Extracting: 50.4kdocs [00:02, 22.7kdocs/s]Extracting: 52.7kdocs [00:02, 22.5kdocs/s]Extracting: 55.0kdocs [00:02, 22.7kdocs/s]Extracting: 57.3kdocs [00:02, 22.8kdocs/s]Extracting: 59.6kdocs [00:02, 21.2kdocs/s]Extracting: 61.8kdocs [00:02, 21.0kdocs/s]Extracting: 64.2kdocs [00:03, 22.0kdocs/s]Extracting: 66.7kdocs [00:03, 22.6kdocs/s]Extracting: 69.4kdocs [00:03, 24.0kdocs/s]Extracting: 72.3kdocs [00:03, 25.4kdocs/s]Extracting: 74.8kdocs [00:03, 21.5kdocs/s]Extracting: 77.1kdocs [00:03, 19.7kdocs/s]Extracting: 79.8kdocs [00:03, 21.7kdocs/s]Extracting: 82.4kdocs [00:03, 22.6kdocs/s]Extracting: 84.9kdocs [00:03, 23.4kdocs/s]Extracting: 87.9kdocs [00:04, 25.3kdocs/s]Extracting: 90.5kdocs [00:04, 25.5kdocs/s]Extracting: 93.5kdocs [00:04, 26.7kdocs/s]Extracting: 96.2kdocs [00:04, 26.6kdocs/s]Extracting: 98.8kdocs [00:04, 26.4kdocs/s]Extracting: 102kdocs [00:04, 23.0kdocs/s] Extracting: 104kdocs [00:04, 23.3kdocs/s]Extracting: 107kdocs [00:04, 24.9kdocs/s]Extracting: 110kdocs [00:04, 27.7kdocs/s]Extracting: 113kdocs [00:05, 26.9kdocs/s]Extracting: 116kdocs [00:05, 26.7kdocs/s]Extracting: 119kdocs [00:05, 27.7kdocs/s]Extracting: 122kdocs [00:05, 24.2kdocs/s]Extracting: 124kdocs [00:05, 23.5kdocs/s]Extracting: 127kdocs [00:05, 25.1kdocs/s]Extracting: 130kdocs [00:05, 26.2kdocs/s]Extracting: 133kdocs [00:05, 26.7kdocs/s]Extracting: 136kdocs [00:05, 27.0kdocs/s]Extracting: 138kdocs [00:06, 27.4kdocs/s]Extracting: 141kdocs [00:06, 27.6kdocs/s]Extracting: 144kdocs [00:06, 28.0kdocs/s]Extracting: 147kdocs [00:06, 27.1kdocs/s]Extracting: 150kdocs [00:06, 26.9kdocs/s]Extracting: 152kdocs [00:06, 26.3kdocs/s]Extracting: 155kdocs [00:06, 24.5kdocs/s]Extracting: 158kdocs [00:06, 24.1kdocs/s]Extracting: 160kdocs [00:06, 24.9kdocs/s]Extracting: 163kdocs [00:06, 26.1kdocs/s]Extracting: 166kdocs [00:07, 22.8kdocs/s]Extracting: 168kdocs [00:07, 23.5kdocs/s]Extracting: 171kdocs [00:07, 22.9kdocs/s]Extracting: 174kdocs [00:07, 24.9kdocs/s]Extracting: 176kdocs [00:07, 24.5kdocs/s]Extracting: 179kdocs [00:07, 25.8kdocs/s]Extracting: 182kdocs [00:07, 25.9kdocs/s]Extracting: 184kdocs [00:07, 22.7kdocs/s]Extracting: 187kdocs [00:07, 23.7kdocs/s]Extracting: 190kdocs [00:08, 25.8kdocs/s]Extracting: 193kdocs [00:08, 27.5kdocs/s]Extracting: 196kdocs [00:08, 26.3kdocs/s]Extracting: 199kdocs [00:08, 24.9kdocs/s]Extracting: 201kdocs [00:08, 23.6kdocs/s]Extracting: 204kdocs [00:08, 23.7kdocs/s]Extracting: 207kdocs [00:08, 24.6kdocs/s]Extracting: 209kdocs [00:08, 25.8kdocs/s]Extracting: 213kdocs [00:08, 27.8kdocs/s]Extracting: 216kdocs [00:09, 28.8kdocs/s]Extracting: 219kdocs [00:09, 28.8kdocs/s]Extracting: 222kdocs [00:09, 27.9kdocs/s]Extracting: 225kdocs [00:09, 29.3kdocs/s]Extracting: 228kdocs [00:09, 25.4kdocs/s]Extracting: 231kdocs [00:09, 26.8kdocs/s]Extracting: 234kdocs [00:09, 28.5kdocs/s]Extracting: 237kdocs [00:09, 27.7kdocs/s]Extracting: 240kdocs [00:09, 26.3kdocs/s]Extracting: 243kdocs [00:10, 27.9kdocs/s]Extracting: 246kdocs [00:10, 27.7kdocs/s]Extracting: 249kdocs [00:10, 29.2kdocs/s]Extracting: 253kdocs [00:10, 30.3kdocs/s]Extracting: 256kdocs [00:10, 26.8kdocs/s]Extracting: 259kdocs [00:10, 28.2kdocs/s]Extracting: 262kdocs [00:10, 26.6kdocs/s]Extracting: 264kdocs [00:10, 25.9kdocs/s]Extracting: 267kdocs [00:10, 26.1kdocs/s]Extracting: 270kdocs [00:11, 26.3kdocs/s]Extracting: 273kdocs [00:11, 26.8kdocs/s]Extracting: 275kdocs [00:11, 26.8kdocs/s]Extracting: 278kdocs [00:11, 23.6kdocs/s]Extracting: 281kdocs [00:11, 26.4kdocs/s]Extracting: 285kdocs [00:11, 29.9kdocs/s]Extracting: 288kdocs [00:11, 28.7kdocs/s]Extracting: 291kdocs [00:11, 28.2kdocs/s]Extracting: 294kdocs [00:11, 26.0kdocs/s]Extracting: 297kdocs [00:12, 26.2kdocs/s]Extracting: 300kdocs [00:12, 26.0kdocs/s]Extracting: 302kdocs [00:12, 26.2kdocs/s]Extracting: 305kdocs [00:12, 26.4kdocs/s]Extracting: 308kdocs [00:12, 23.9kdocs/s]Extracting: 310kdocs [00:12, 24.4kdocs/s]Extracting: 313kdocs [00:12, 18.8kdocs/s]Extracting: 315kdocs [00:13, 13.8kdocs/s]Extracting: 316kdocs [00:13, 12.6kdocs/s]Extracting: 319kdocs [00:13, 15.3kdocs/s]Extracting: 322kdocs [00:13, 18.3kdocs/s]Extracting: 324kdocs [00:13, 18.3kdocs/s]Extracting: 327kdocs [00:13, 20.5kdocs/s]Extracting: 329kdocs [00:13, 19.4kdocs/s]Extracting: 331kdocs [00:13, 16.9kdocs/s]Extracting: 333kdocs [00:14, 17.7kdocs/s]Extracting: 335kdocs [00:14, 14.5kdocs/s]Extracting: 338kdocs [00:14, 18.7kdocs/s]Extracting: 342kdocs [00:14, 21.9kdocs/s]Extracting: 344kdocs [00:14, 23.0kdocs/s]Extracting: 347kdocs [00:14, 23.5kdocs/s]Extracting: 349kdocs [00:14, 23.6kdocs/s]Extracting: 352kdocs [00:14, 21.8kdocs/s]Extracting: 354kdocs [00:14, 22.6kdocs/s]Extracting: 357kdocs [00:15, 24.8kdocs/s]Extracting: 360kdocs [00:15, 24.2kdocs/s]Extracting: 362kdocs [00:15, 23.7kdocs/s]Extracting: 365kdocs [00:15, 24.3kdocs/s]Extracting: 368kdocs [00:15, 25.8kdocs/s]Extracting: 371kdocs [00:15, 26.5kdocs/s]Extracting: 373kdocs [00:15, 25.9kdocs/s]Extracting: 376kdocs [00:15, 24.2kdocs/s]Extracting: 378kdocs [00:15, 21.6kdocs/s]Extracting: 381kdocs [00:16, 22.6kdocs/s]Extracting: 383kdocs [00:16, 17.3kdocs/s]Extracting: 386kdocs [00:16, 20.0kdocs/s]Extracting: 389kdocs [00:16, 22.0kdocs/s]Extracting: 391kdocs [00:16, 22.8kdocs/s]Extracting: 394kdocs [00:16, 22.7kdocs/s]Extracting: 397kdocs [00:16, 23.7kdocs/s]Extracting: 399kdocs [00:16, 23.9kdocs/s]Extracting: 402kdocs [00:17, 25.9kdocs/s]Extracting: 405kdocs [00:17, 24.2kdocs/s]Extracting: 407kdocs [00:17, 24.3kdocs/s]Extracting: 410kdocs [00:17, 24.8kdocs/s]Extracting: 413kdocs [00:17, 26.9kdocs/s]Extracting: 416kdocs [00:17, 25.1kdocs/s]Extracting: 418kdocs [00:17, 25.6kdocs/s]Extracting: 421kdocs [00:17, 27.0kdocs/s]Extracting: 425kdocs [00:17, 30.0kdocs/s]Extracting: 428kdocs [00:17, 29.1kdocs/s]Extracting: 431kdocs [00:18, 29.2kdocs/s]Extracting: 434kdocs [00:18, 30.3kdocs/s]Extracting: 437kdocs [00:18, 29.5kdocs/s]Extracting: 440kdocs [00:18, 28.8kdocs/s]Extracting: 443kdocs [00:18, 27.1kdocs/s]Extracting: 446kdocs [00:18, 27.9kdocs/s]Extracting: 449kdocs [00:18, 17.1kdocs/s]Extracting: 452kdocs [00:19, 19.7kdocs/s]Extracting: 455kdocs [00:19, 21.2kdocs/s]Extracting: 458kdocs [00:19, 24.3kdocs/s]Extracting: 461kdocs [00:19, 25.9kdocs/s]Extracting: 464kdocs [00:19, 26.7kdocs/s]Extracting: 467kdocs [00:19, 26.5kdocs/s]Extracting: 470kdocs [00:19, 27.6kdocs/s]Extracting: 473kdocs [00:19, 28.4kdocs/s]Extracting: 476kdocs [00:19, 28.3kdocs/s]Extracting: 479kdocs [00:19, 28.3kdocs/s]Extracting: 482kdocs [00:20, 28.0kdocs/s]Extracting: 485kdocs [00:20, 28.1kdocs/s]Extracting: 487kdocs [00:20, 28.1kdocs/s]Extracting: 490kdocs [00:20, 28.6kdocs/s]Extracting: 493kdocs [00:20, 28.4kdocs/s]Extracting: 496kdocs [00:20, 28.4kdocs/s]Extracting: 500kdocs [00:20, 30.2kdocs/s]Extracting: 503kdocs [00:20, 29.6kdocs/s]Extracting: 506kdocs [00:20, 29.3kdocs/s]Extracting: 509kdocs [00:20, 30.7kdocs/s]Extracting: 512kdocs [00:21, 29.6kdocs/s]Extracting: 515kdocs [00:21, 28.5kdocs/s]Extracting: 518kdocs [00:21, 22.7kdocs/s]Extracting: 520kdocs [00:21, 23.1kdocs/s]Extracting: 523kdocs [00:21, 22.3kdocs/s]Extracting: 525kdocs [00:21, 22.3kdocs/s]Extracting: 528kdocs [00:21, 25.1kdocs/s]Extracting: 532kdocs [00:21, 27.6kdocs/s]Extracting: 535kdocs [00:22, 28.2kdocs/s]Extracting: 538kdocs [00:22, 26.3kdocs/s]Extracting: 540kdocs [00:22, 26.2kdocs/s]Extracting: 543kdocs [00:22, 25.7kdocs/s]Extracting: 546kdocs [00:22, 25.6kdocs/s]Extracting: 548kdocs [00:22, 25.4kdocs/s]Extracting: 551kdocs [00:22, 25.6kdocs/s]Extracting: 554kdocs [00:22, 26.5kdocs/s]Extracting: 556kdocs [00:22, 25.4kdocs/s]Extracting: 559kdocs [00:22, 25.7kdocs/s]Extracting: 562kdocs [00:23, 27.1kdocs/s]Extracting: 565kdocs [00:23, 26.9kdocs/s]Extracting: 568kdocs [00:23, 27.1kdocs/s]Extracting: 571kdocs [00:23, 29.1kdocs/s]Extracting: 574kdocs [00:23, 28.5kdocs/s]Extracting: 577kdocs [00:23, 30.1kdocs/s]Extracting: 580kdocs [00:23, 29.6kdocs/s]Extracting: 583kdocs [00:23, 24.5kdocs/s]Extracting: 586kdocs [00:24, 20.6kdocs/s]Extracting: 588kdocs [00:24, 21.0kdocs/s]Extracting: 591kdocs [00:24, 22.8kdocs/s]Extracting: 594kdocs [00:24, 25.0kdocs/s]Extracting: 597kdocs [00:24, 26.6kdocs/s]Extracting: 600kdocs [00:24, 25.5kdocs/s]Extracting: 603kdocs [00:24, 26.8kdocs/s]Extracting: 606kdocs [00:24, 27.9kdocs/s]Extracting: 609kdocs [00:24, 26.4kdocs/s]Extracting: 611kdocs [00:24, 26.6kdocs/s]Extracting: 614kdocs [00:25, 23.3kdocs/s]Extracting: 617kdocs [00:25, 23.5kdocs/s]Extracting: 619kdocs [00:25, 25.0kdocs/s]Extracting: 622kdocs [00:25, 25.6kdocs/s]Extracting: 625kdocs [00:25, 26.9kdocs/s]Extracting: 628kdocs [00:25, 24.7kdocs/s]Extracting: 631kdocs [00:25, 26.0kdocs/s]Extracting: 634kdocs [00:25, 23.8kdocs/s]Extracting: 637kdocs [00:26, 26.0kdocs/s]Extracting: 640kdocs [00:26, 27.6kdocs/s]Extracting: 644kdocs [00:26, 31.7kdocs/s]Extracting: 647kdocs [00:26, 27.0kdocs/s]Extracting: 650kdocs [00:26, 27.2kdocs/s]Extracting: 653kdocs [00:26, 26.9kdocs/s]Extracting: 656kdocs [00:26, 26.6kdocs/s]Extracting: 659kdocs [00:26, 28.3kdocs/s]Extracting: 662kdocs [00:26, 26.8kdocs/s]Extracting: 665kdocs [00:27, 28.5kdocs/s]Extracting: 668kdocs [00:27, 28.5kdocs/s]Extracting: 671kdocs [00:27, 24.2kdocs/s]Extracting: 674kdocs [00:27, 25.2kdocs/s]Extracting: 676kdocs [00:27, 25.3kdocs/s]Extracting: 679kdocs [00:27, 25.9kdocs/s]Extracting: 682kdocs [00:27, 26.3kdocs/s]Extracting: 685kdocs [00:27, 26.6kdocs/s]Extracting: 687kdocs [00:27, 26.8kdocs/s]Extracting: 691kdocs [00:27, 28.0kdocs/s]Extracting: 694kdocs [00:28, 28.6kdocs/s]Extracting: 696kdocs [00:28, 28.8kdocs/s]Extracting: 700kdocs [00:28, 30.3kdocs/s]Extracting: 703kdocs [00:28, 26.9kdocs/s]Extracting: 706kdocs [00:28, 27.5kdocs/s]Extracting: 709kdocs [00:28, 28.3kdocs/s]Extracting: 712kdocs [00:28, 28.6kdocs/s]Extracting: 715kdocs [00:28, 28.5kdocs/s]Extracting: 718kdocs [00:28, 24.3kdocs/s]Extracting: 721kdocs [00:29, 25.8kdocs/s]Extracting: 723kdocs [00:29, 26.8kdocs/s]Extracting: 726kdocs [00:29, 23.6kdocs/s]Extracting: 729kdocs [00:29, 24.6kdocs/s]Extracting: 732kdocs [00:29, 23.5kdocs/s]Extracting: 734kdocs [00:29, 24.6kdocs/s]Extracting: 737kdocs [00:29, 24.3kdocs/s]Extracting: 740kdocs [00:29, 25.4kdocs/s]Extracting: 742kdocs [00:29, 26.1kdocs/s]Extracting: 746kdocs [00:30, 27.7kdocs/s]Extracting: 748kdocs [00:30, 26.1kdocs/s]Extracting: 751kdocs [00:30, 25.8kdocs/s]Extracting: 754kdocs [00:30, 26.4kdocs/s]Extracting: 757kdocs [00:30, 24.2kdocs/s]Extracting: 759kdocs [00:30, 24.7kdocs/s]Extracting: 762kdocs [00:30, 26.2kdocs/s]Extracting: 765kdocs [00:30, 27.4kdocs/s]Extracting: 768kdocs [00:30, 28.0kdocs/s]Extracting: 771kdocs [00:31, 29.3kdocs/s]Extracting: 774kdocs [00:31, 28.6kdocs/s]Extracting: 777kdocs [00:31, 29.1kdocs/s]Extracting: 780kdocs [00:31, 27.4kdocs/s]Extracting: 783kdocs [00:31, 23.9kdocs/s]Extracting: 786kdocs [00:31, 25.2kdocs/s]Extracting: 789kdocs [00:31, 20.9kdocs/s]Extracting: 791kdocs [00:31, 22.2kdocs/s]Extracting: 794kdocs [00:32, 21.0kdocs/s]Extracting: 796kdocs [00:32, 21.9kdocs/s]Extracting: 799kdocs [00:32, 23.3kdocs/s]Extracting: 802kdocs [00:32, 26.2kdocs/s]Extracting: 805kdocs [00:32, 26.9kdocs/s]Extracting: 808kdocs [00:32, 25.7kdocs/s]Extracting: 810kdocs [00:32, 24.9kdocs/s]Extracting: 814kdocs [00:32, 26.9kdocs/s]Extracting: 816kdocs [00:32, 26.1kdocs/s]Extracting: 820kdocs [00:32, 28.5kdocs/s]Extracting: 823kdocs [00:33, 29.5kdocs/s]Extracting: 826kdocs [00:33, 31.0kdocs/s]Extracting: 830kdocs [00:33, 32.6kdocs/s]Extracting: 833kdocs [00:33, 32.0kdocs/s]Extracting: 837kdocs [00:33, 32.1kdocs/s]Extracting: 840kdocs [00:33, 31.1kdocs/s]Extracting: 843kdocs [00:33, 31.4kdocs/s]Extracting: 846kdocs [00:33, 28.9kdocs/s]Extracting: 850kdocs [00:33, 31.1kdocs/s]Extracting: 853kdocs [00:34, 28.8kdocs/s]Extracting: 856kdocs [00:34, 28.9kdocs/s]Extracting: 859kdocs [00:34, 26.5kdocs/s]Extracting: 862kdocs [00:34, 27.2kdocs/s]Extracting: 865kdocs [00:34, 27.8kdocs/s]Extracting: 868kdocs [00:34, 26.9kdocs/s]Extracting: 870kdocs [00:34, 25.9kdocs/s]Extracting: 873kdocs [00:34, 27.6kdocs/s]Extracting: 876kdocs [00:34, 27.5kdocs/s]Extracting: 879kdocs [00:35, 27.6kdocs/s]Extracting: 882kdocs [00:35, 25.9kdocs/s]Extracting: 885kdocs [00:35, 28.3kdocs/s]Extracting: 888kdocs [00:35, 27.0kdocs/s]Extracting: 891kdocs [00:35, 26.8kdocs/s]Extracting: 894kdocs [00:35, 27.4kdocs/s]Extracting: 897kdocs [00:35, 25.9kdocs/s]Extracting: 900kdocs [00:35, 27.7kdocs/s]Extracting: 903kdocs [00:35, 28.0kdocs/s]Extracting: 906kdocs [00:35, 27.2kdocs/s]Extracting: 908kdocs [00:36, 26.3kdocs/s]Extracting: 912kdocs [00:36, 28.3kdocs/s]Extracting: 915kdocs [00:36, 28.6kdocs/s]Extracting: 918kdocs [00:36, 29.7kdocs/s]Extracting: 921kdocs [00:36, 28.7kdocs/s]Extracting: 924kdocs [00:36, 28.4kdocs/s]Extracting: 927kdocs [00:36, 27.6kdocs/s]Extracting: 930kdocs [00:36, 29.0kdocs/s]Extracting: 933kdocs [00:36, 29.5kdocs/s]Extracting: 936kdocs [00:37, 29.7kdocs/s]Extracting: 939kdocs [00:37, 27.4kdocs/s]Extracting: 942kdocs [00:37, 26.0kdocs/s]Extracting: 944kdocs [00:37, 26.5kdocs/s]Extracting: 947kdocs [00:37, 27.8kdocs/s]Extracting: 950kdocs [00:37, 26.5kdocs/s]Extracting: 953kdocs [00:37, 27.6kdocs/s]Extracting: 956kdocs [00:37, 27.5kdocs/s]Extracting: 959kdocs [00:37, 28.4kdocs/s]Extracting: 962kdocs [00:37, 29.4kdocs/s]Extracting: 966kdocs [00:38, 31.1kdocs/s]Extracting: 969kdocs [00:38, 30.7kdocs/s]Extracting: 972kdocs [00:38, 29.2kdocs/s]Extracting: 975kdocs [00:38, 29.8kdocs/s]Extracting: 978kdocs [00:38, 30.3kdocs/s]Extracting: 981kdocs [00:38, 27.2kdocs/s]Extracting: 984kdocs [00:38, 26.8kdocs/s]Extracting: 987kdocs [00:38, 27.4kdocs/s]Extracting: 991kdocs [00:38, 29.5kdocs/s]Extracting: 994kdocs [00:39, 26.1kdocs/s]Extracting: 996kdocs [00:39, 25.9kdocs/s]Extracting: 999kdocs [00:39, 27.1kdocs/s]Extracting: 1.00Mdocs [00:39, 23.9kdocs/s]Extracting: 1.01Mdocs [00:39, 25.4kdocs/s]Extracting: 1.01Mdocs [00:39, 26.7kdocs/s]Extracting: 1.01Mdocs [00:39, 28.3kdocs/s]Extracting: 1.01Mdocs [00:39, 30.4kdocs/s]Extracting: 1.02Mdocs [00:39, 30.4kdocs/s]Extracting: 1.02Mdocs [00:40, 30.4kdocs/s]Extracting: 1.02Mdocs [00:40, 31.5kdocs/s]Extracting: 1.03Mdocs [00:40, 33.2kdocs/s]Extracting: 1.03Mdocs [00:40, 31.6kdocs/s]Extracting: 1.03Mdocs [00:40, 28.0kdocs/s]Extracting: 1.04Mdocs [00:40, 28.8kdocs/s]Extracting: 1.04Mdocs [00:40, 30.0kdocs/s]Extracting: 1.04Mdocs [00:40, 30.1kdocs/s]Extracting: 1.05Mdocs [00:40, 30.4kdocs/s]Extracting: 1.05Mdocs [00:41, 28.2kdocs/s]Extracting: 1.05Mdocs [00:41, 27.8kdocs/s]Extracting: 1.06Mdocs [00:41, 27.4kdocs/s]Extracting: 1.06Mdocs [00:41, 27.9kdocs/s]Extracting: 1.06Mdocs [00:41, 27.9kdocs/s]Extracting: 1.06Mdocs [00:41, 26.8kdocs/s]Extracting: 1.07Mdocs [00:41, 27.5kdocs/s]Extracting: 1.07Mdocs [00:41, 28.4kdocs/s]Extracting: 1.07Mdocs [00:41, 29.2kdocs/s]Extracting: 1.08Mdocs [00:41, 30.7kdocs/s]Extracting: 1.08Mdocs [00:42, 29.0kdocs/s]Extracting: 1.08Mdocs [00:42, 30.8kdocs/s]Extracting: 1.09Mdocs [00:42, 31.1kdocs/s]Extracting: 1.09Mdocs [00:42, 31.4kdocs/s]Extracting: 1.09Mdocs [00:42, 31.5kdocs/s]Extracting: 1.10Mdocs [00:42, 31.0kdocs/s]Extracting: 1.10Mdocs [00:42, 31.6kdocs/s]Extracting: 1.10Mdocs [00:42, 31.8kdocs/s]Extracting: 1.11Mdocs [00:42, 25.8kdocs/s]Extracting: 1.11Mdocs [00:43, 27.1kdocs/s]Extracting: 1.11Mdocs [00:43, 25.7kdocs/s]Extracting: 1.11Mdocs [00:43, 24.8kdocs/s]Extracting: 1.12Mdocs [00:43, 26.7kdocs/s]Extracting: 1.12Mdocs [00:43, 26.4kdocs/s]Extracting: 1.12Mdocs [00:43, 28.4kdocs/s]Extracting: 1.13Mdocs [00:43, 29.5kdocs/s]Extracting: 1.13Mdocs [00:43, 29.6kdocs/s]Extracting: 1.13Mdocs [00:43, 29.8kdocs/s]Extracting: 1.14Mdocs [00:44, 30.1kdocs/s]Extracting: 1.14Mdocs [00:44, 30.5kdocs/s]Extracting: 1.14Mdocs [00:44, 26.6kdocs/s]Extracting: 1.15Mdocs [00:44, 28.5kdocs/s]Extracting: 1.15Mdocs [00:44, 28.7kdocs/s]Extracting: 1.15Mdocs [00:44, 28.0kdocs/s]Extracting: 1.15Mdocs [00:44, 28.3kdocs/s]Extracting: 1.16Mdocs [00:44, 29.6kdocs/s]Extracting: 1.16Mdocs [00:44, 30.2kdocs/s]Extracting: 1.16Mdocs [00:45, 31.8kdocs/s]Extracting: 1.17Mdocs [00:45, 32.1kdocs/s]Extracting: 1.17Mdocs [00:45, 30.1kdocs/s]Extracting: 1.17Mdocs [00:45, 29.8kdocs/s]Extracting: 1.18Mdocs [00:45, 29.8kdocs/s]Extracting: 1.18Mdocs [00:45, 28.1kdocs/s]Extracting: 1.18Mdocs [00:45, 29.7kdocs/s]Extracting: 1.19Mdocs [00:45, 28.7kdocs/s]Extracting: 1.19Mdocs [00:45, 29.9kdocs/s]Extracting: 1.19Mdocs [00:45, 28.8kdocs/s]Extracting: 1.20Mdocs [00:46, 28.4kdocs/s]Extracting: 1.20Mdocs [00:46, 28.3kdocs/s]Extracting: 1.20Mdocs [00:46, 27.4kdocs/s]Extracting: 1.20Mdocs [00:46, 28.4kdocs/s]Extracting: 1.21Mdocs [00:46, 30.0kdocs/s]Extracting: 1.21Mdocs [00:46, 29.3kdocs/s]Extracting: 1.21Mdocs [00:46, 28.8kdocs/s]Extracting: 1.22Mdocs [00:46, 28.4kdocs/s]Extracting: 1.22Mdocs [00:46, 28.5kdocs/s]Extracting: 1.22Mdocs [00:47, 28.6kdocs/s]Extracting: 1.23Mdocs [00:47, 29.4kdocs/s]Extracting: 1.23Mdocs [00:47, 29.6kdocs/s]Extracting: 1.23Mdocs [00:47, 31.1kdocs/s]Extracting: 1.24Mdocs [00:47, 31.2kdocs/s]Extracting: 1.24Mdocs [00:47, 30.5kdocs/s]Extracting: 1.24Mdocs [00:47, 30.7kdocs/s]Extracting: 1.24Mdocs [00:47, 26.7kdocs/s]Extracting: 1.25Mdocs [00:47, 25.0kdocs/s]Extracting: 1.25Mdocs [00:48, 24.8kdocs/s]Extracting: 1.25Mdocs [00:48, 24.8kdocs/s]Extracting: 1.26Mdocs [00:48, 23.4kdocs/s]Extracting: 1.26Mdocs [00:48, 25.1kdocs/s]Extracting: 1.26Mdocs [00:48, 24.7kdocs/s]Extracting: 1.26Mdocs [00:48, 24.9kdocs/s]Extracting: 1.27Mdocs [00:48, 25.3kdocs/s]Extracting: 1.27Mdocs [00:48, 27.4kdocs/s]Extracting: 1.27Mdocs [00:48, 26.7kdocs/s]Extracting: 1.27Mdocs [00:48, 26.2kdocs/s]Extracting: 1.28Mdocs [00:49, 27.1kdocs/s]Extracting: 1.28Mdocs [00:49, 25.5kdocs/s]Extracting: 1.28Mdocs [00:49, 28.6kdocs/s]Extracting: 1.29Mdocs [00:49, 30.7kdocs/s]Extracting: 1.29Mdocs [00:49, 29.6kdocs/s]Extracting: 1.29Mdocs [00:49, 28.8kdocs/s]Extracting: 1.30Mdocs [00:49, 29.8kdocs/s]Extracting: 1.30Mdocs [00:49, 29.3kdocs/s]Extracting: 1.30Mdocs [00:49, 29.4kdocs/s]Extracting: 1.31Mdocs [00:50, 25.5kdocs/s]Extracting: 1.31Mdocs [00:50, 25.5kdocs/s]Extracting: 1.31Mdocs [00:50, 26.5kdocs/s]Extracting: 1.31Mdocs [00:50, 25.9kdocs/s]Extracting: 1.32Mdocs [00:50, 25.2kdocs/s]Extracting: 1.32Mdocs [00:50, 26.4kdocs/s]Extracting: 1.32Mdocs [00:50, 26.7kdocs/s]Extracting: 1.33Mdocs [00:50, 29.4kdocs/s]Extracting: 1.33Mdocs [00:50, 30.7kdocs/s]Extracting: 1.33Mdocs [00:51, 29.3kdocs/s]Extracting: 1.34Mdocs [00:51, 25.5kdocs/s]Extracting: 1.34Mdocs [00:51, 26.5kdocs/s]Extracting: 1.34Mdocs [00:51, 25.7kdocs/s]Extracting: 1.34Mdocs [00:51, 27.5kdocs/s]Extracting: 1.35Mdocs [00:51, 26.1kdocs/s]
-sentencepiece_trainer.cc(78) LOG(INFO) Starts training with : 
-trainer_spec {
-  input: saved/data/tokenizer_set/_tokenizer_tmp.txt
-  input_format: 
-  model_prefix: saved/tokenizer/banglagamba_tokenizer
-  model_type: UNIGRAM
-  vocab_size: 48000
-  self_test_sample_size: 0
-  character_coverage: 0.9999
-  input_sentence_size: 0
-  shuffle_input_sentence: 1
-  seed_sentencepiece_size: 1000000
-  shrinking_factor: 0.75
-  max_sentence_length: 65536
-  num_threads: 4
-  num_sub_iterations: 2
-  max_sentencepiece_length: 16
-  split_by_unicode_script: 1
-  split_by_number: 1
-  split_by_whitespace: 1
-  split_digits: 0
-  pretokenization_delimiter: 
-  treat_whitespace_as_suffix: 0
-  allow_whitespace_only_pieces: 0
-  user_defined_symbols: <|im_start|>
-  user_defined_symbols: <|im_end|>
-  user_defined_symbols: <|system|>
-  user_defined_symbols: <|user|>
-  user_defined_symbols: <|assistant|>
-  user_defined_symbols: <|tool|>
-  user_defined_symbols: <|tool_result|>
-  user_defined_symbols: <|task_sentiment|>
-  user_defined_symbols: <|task_ner|>
-  user_defined_symbols: <|task_qa|>
-  user_defined_symbols: <|task_summarize|>
-  user_defined_symbols: <|task_translate_bn_en|>
-  user_defined_symbols: <|task_translate_en_bn|>
-  user_defined_symbols: <|task_classify|>
-  user_defined_symbols: <|task_generate|>
-  user_defined_symbols: <|task_toxicity|>
-  user_defined_symbols: <|task_nli|>
-  user_defined_symbols: <|task_pos|>
-  user_defined_symbols: <|task_paraphrase|>
-  user_defined_symbols: <|lang_bn|>
-  user_defined_symbols: <|lang_en|>
-  user_defined_symbols: <|lang_wbn|>
-  user_defined_symbols: <|lang_bnls|>
-  user_defined_symbols: <|lang_mix|>
-  user_defined_symbols: <|lang_code|>
-  user_defined_symbols: <|positive|>
-  user_defined_symbols: <|negative|>
-  user_defined_symbols: <|neutral|>
-  user_defined_symbols: <|mixed|>
-  user_defined_symbols: <|offensive|>
-  user_defined_symbols: <|think|>
-  user_defined_symbols: <|/think|>
-  user_defined_symbols: <|answer|>
-  user_defined_symbols: <|sep|>
-  user_defined_symbols: <|context|>
-  user_defined_symbols: <|/context|>
-  user_defined_symbols: <|question|>
-  user_defined_symbols: <|passage|>
-  user_defined_symbols: <|headline|>
-  user_defined_symbols: <|title|>
-  user_defined_symbols: <|speaker_a|>
-  user_defined_symbols: <|speaker_b|>
-  user_defined_symbols: <|reserved_0|>
-  user_defined_symbols: <|reserved_1|>
-  user_defined_symbols: <|reserved_2|>
-  user_defined_symbols: <|reserved_3|>
-  user_defined_symbols: <|reserved_4|>
-  user_defined_symbols: <|reserved_5|>
-  user_defined_symbols: <|reserved_6|>
-  user_defined_symbols: <|reserved_7|>
-  user_defined_symbols: <|reserved_8|>
-  user_defined_symbols: <|reserved_9|>
-  user_defined_symbols: <|reserved_10|>
-  user_defined_symbols: <|reserved_11|>
-  user_defined_symbols: <|reserved_12|>
-  user_defined_symbols: <|reserved_13|>
-  user_defined_symbols: <|reserved_14|>
-  user_defined_symbols: <|reserved_15|>
-  user_defined_symbols: <|reserved_16|>
-  user_defined_symbols: <|reserved_17|>
-  user_defined_symbols: <|reserved_18|>
-  user_defined_symbols: <|reserved_19|>
-  user_defined_symbols: <|reserved_20|>
-  user_defined_symbols: <|reserved_21|>
-  user_defined_symbols: <|reserved_22|>
-  user_defined_symbols: <|reserved_23|>
-  user_defined_symbols: <|reserved_24|>
-  user_defined_symbols: <|reserved_25|>
-  user_defined_symbols: <|reserved_26|>
-  user_defined_symbols: <|reserved_27|>
-  user_defined_symbols: <|reserved_28|>
-  user_defined_symbols: <|reserved_29|>
-  user_defined_symbols: <|reserved_30|>
-  user_defined_symbols: <|reserved_31|>
-  user_defined_symbols: <|reserved_32|>
-  user_defined_symbols: <|reserved_33|>
-  user_defined_symbols: <|reserved_34|>
-  user_defined_symbols: <|reserved_35|>
-  user_defined_symbols: <|reserved_36|>
-  user_defined_symbols: <|reserved_37|>
-  user_defined_symbols: <|reserved_38|>
-  user_defined_symbols: <|reserved_39|>
-  user_defined_symbols: <|reserved_40|>
-  user_defined_symbols: <|reserved_41|>
-  user_defined_symbols: <|reserved_42|>
-  user_defined_symbols: <|reserved_43|>
-  user_defined_symbols: <|reserved_44|>
-  user_defined_symbols: <|reserved_45|>
-  user_defined_symbols: <|reserved_46|>
-  user_defined_symbols: <|reserved_47|>
-  user_defined_symbols: <|reserved_48|>
-  user_defined_symbols: <|reserved_49|>
-  user_defined_symbols: <|reserved_50|>
-  user_defined_symbols: <|reserved_51|>
-  user_defined_symbols: <|reserved_52|>
-  user_defined_symbols: <|reserved_53|>
-  user_defined_symbols: <|reserved_54|>
-  user_defined_symbols: <|reserved_55|>
-  user_defined_symbols: <|reserved_56|>
-  user_defined_symbols: <|reserved_57|>
-  user_defined_symbols: <|reserved_58|>
-  user_defined_symbols: <|reserved_59|>
-  user_defined_symbols: <|reserved_60|>
-  user_defined_symbols: <|reserved_61|>
-  user_defined_symbols: <|reserved_62|>
-  user_defined_symbols: <|reserved_63|>
-  user_defined_symbols: <|reserved_64|>
-  user_defined_symbols: <|reserved_65|>
-  user_defined_symbols: <|reserved_66|>
-  user_defined_symbols: <|reserved_67|>
-  user_defined_symbols: <|reserved_68|>
-  user_defined_symbols: <|reserved_69|>
-  user_defined_symbols: <|reserved_70|>
-  user_defined_symbols: <|reserved_71|>
-  user_defined_symbols: <|reserved_72|>
-  user_defined_symbols: <|reserved_73|>
-  user_defined_symbols: <|reserved_74|>
-  user_defined_symbols: <|reserved_75|>
-  user_defined_symbols: <|reserved_76|>
-  user_defined_symbols: <|reserved_77|>
-  user_defined_symbols: <|reserved_78|>
-  user_defined_symbols: <|reserved_79|>
-  user_defined_symbols: <|reserved_80|>
-  user_defined_symbols: <|reserved_81|>
-  user_defined_symbols: <|reserved_82|>
-  user_defined_symbols: <|reserved_83|>
-  user_defined_symbols: <|reserved_84|>
-  user_defined_symbols: <|reserved_85|>
-  user_defined_symbols: <|reserved_86|>
-  user_defined_symbols: <|reserved_87|>
-  user_defined_symbols: <|reserved_88|>
-  user_defined_symbols: <|reserved_89|>
-  user_defined_symbols: <|reserved_90|>
-  user_defined_symbols: <|reserved_91|>
-  user_defined_symbols: <|reserved_92|>
-  user_defined_symbols: <|reserved_93|>
-  user_defined_symbols: <|reserved_94|>
-  user_defined_symbols: <|reserved_95|>
-  user_defined_symbols: <|reserved_96|>
-  user_defined_symbols: <|reserved_97|>
-  user_defined_symbols: <|reserved_98|>
-  user_defined_symbols: <|reserved_99|>
-  required_chars: 
-  byte_fallback: 1
-  vocabulary_output_piece_score: 1
-  train_extremely_large_corpus: 1
-  seed_sentencepieces_file: 
-  hard_vocab_limit: 1
-  use_all_vocab: 0
-  unk_id: 1
-  bos_id: 2
-  eos_id: 3
-  pad_id: 0
-  unk_piece: <unk>
-  bos_piece: <s>
-  eos_piece: </s>
-  pad_piece: <pad>
-  unk_surface:  ⁇ 
-  enable_differential_privacy: 0
-  differential_privacy_noise_level: 0
-  differential_privacy_clipping_threshold: 0
-}
-normalizer_spec {
-  name: identity
-  add_dummy_prefix: 1
-  remove_extra_whitespaces: 0
-  escape_whitespaces: 1
-  normalization_rule_tsv: 
-}
-denormalizer_spec {}
-trainer_interface.cc(355) LOG(INFO) SentenceIterator is not specified. Using MultiFileSentenceIterator.
-trainer_interface.cc(186) LOG(INFO) Loading corpus: saved/data/tokenizer_set/_tokenizer_tmp.txt
-trainer_interface.cc(382) LOG(WARNING) Found too long line (160934 > 65536).
-trainer_interface.cc(384) LOG(WARNING) Too long lines are skipped in the training.
-trainer_interface.cc(385) LOG(WARNING) The maximum length can be changed with --max_sentence_length=<size> flag.
-trainer_interface.cc(393) LOG(INFO) Reserved chars are found. Skipped: <|lang_bn|>(যুক্তরাজ্য ‘আইসিটি সাপোর্ট ফোরাম’ এর লিফলেট) █ আসছে ২৮ এপ্রিল ২০১৩ বিকেল ৩টায় “আইসিটি সাপোর্ট ফোরাম” এর উদ্যোগে শহীদ আলতাব আলী পার্ক (লন্ডন) এ মুক্তিযুদ্ধের পক্ষশক্তির মহাসমাবেশ সফল করুন। █ আইসিটি সাপোর্ট ফোরাম এর এই লিফলেটটি প্রচার করুন ঃ- ======================================= বন্ধুরা, যুদ্ধাপরাধীদের বিরুদ্ধে বাংলাদেশে চলমান বিচার প্রক্রিয়াকে সমর্থন প্রদান এবং প্রবাসে তার সপক্ষে জনমত গঠনের উদ্দেশ্য নিয়ে আই সি টি সাপোর্ট ফোরাম গড়ে ওঠে। যুক্তরাজ্যে ৩৩টি মুক্তিযুদ্ধের পক্ষের সংগঠন নিয়ে আমরা যাত্রা শুরু করি। এই ফোরামে বর্তমানে ৭৫ টি সংগঠন যুক্ত আছে। ২০০৮ সালের সাধারণ নির্বাচনে বাংলাদেশের নিরঙ্কুশ সংখ্যাগরিষ্ঠ মানুষ ১৯৭১-এ সংঘটিত গণহত্যা, যুদ্ধাপরাধ ও মানবতাবিরোধী অপরাধের বিচারের পক্ষে জনমত দেয়। জনগণের এই দাবিকে ধারণ করে নির্বাচিত বাংলাদেশ আওয়ামী লীগের নেতৃত্বাধীন মহাজোট সরকার ২০১০ সালে আন্তর্জাতিক অপরাধ ট্রাইব্যুনাল গঠন করে দীর্ঘ বিচারহীনতার নিরসন এবং আইনের শাসন প্রতিষ্ঠার লক্ষ্যে ঐতিহাসিক এই বিচারকার্য শুরু করে। দেশের সাধারণ মানুষ, বিশেষত তরুণ প্রজন্ম শুরু থেকেই এই বিচারের প্রতি দৃষ্টি নিবদ্ধ রেখেছিলো অতন্দ্র প্রহরীর মতো। কুখ্যাত যুদ্ধাপরাধী কাদের মোল্লার রায়ে বেশির ভাগ অপরাধ সন্দেহাতীতভাবে প্রমাণিত হওয়ার পরও যখন উপযুক্ত শাস্তি দেয়া হলো না, তখন তরুণ প্রজন্মের নেতৃত্বে দেশ এবং বিদেশের আপামর বাঙালি শাহবাগ গণজাগরণের পতাকাতলে একত্রিত হয়। মুক্তিযুদ্ধের ন্যায্যতা প্রতিষ্ঠা, বিচারের ন্যায্যতা প্রতিষ্ঠা, ১৯৭১ এর মূল চেতনা ফিরিয়ে আনা, এবং জামাত-শিবির এবং তাদের দোসরদের অর্থনৈতিক এবং সামাজিকভাবে বয়কট করার উদ্দেশ্যকে সামনে রেখে গণমানুষের এই জাগরণ। অদৃশ্যপূর্ব এই প্রতিবাদে মিছিলের সারি কেবল দীর্ঘ থেকে দীর্ঘতর হয়েছে এবং তা ছড়িয়ে পড়েছে সর্বত্র, যা বাংলাদেশের ইতিহাসে গত ৪২ বছরেও কেউ দেখেনি। আপনারা লক্ষ করেছেন, এই বিচার শুরু হওয়ার পর থেকে গত কয়েক বছর দেশে এবং বিদেশে জামাত-শিবির চক্র, তাদের দেশি-বিদেশি ভাড়াটে বুদ্ধিজীবী, এবং প্রতিষ্ঠানগুলো ১৯৭১ সালে সংঘটিত গণহত্যার এই ন্যায়সংগত বিচারকে নস্যাৎ করার জন্য জঘন্য মিথ্যাচার চালিয়ে গেছে। তারা কেবল এই মিথ্যাচার-অপপ্রচার চালিয়েই ক্ষান্ত হয়নি। গেল বছরের অক্টোবর থেকে জামাত-শিবির চক্র পরিকল্পিতভাবে বাংলাদেশের স্থিতিশীলতা এবং সার্বভৌমত্ব নস্যাত করতে দেশের অভ্যন্তরে ব্যাপক নাশকতা শুরু করে। বিভিন্ন স্থানে সংঘটিত নাশকতামূলক এই সব কর্মকান্ড ছিলো অত্যন্ত পরিকল্পিত এবং বাংলাদেশের ইতিহাসে নজিরবিহীন। ঠিক যেভাবে তারা ১৯৭১ সালে তাদের কৃত গণহত্যা, মানবতাবিরোধী অপরাধ, এবং যুদ্ধাপরাধকে জায়েজ করতে ধর্মকে ব্যবহার করেছিলো অপরাধী চক্রকে উসকে দিতে, ঠিক সেভাবেই আমরা দেখেছি যখন বিচার শুরু হলো তখন প্রথমে তারা তাদের ইতিহাসজ্ঞানহীন অনুসারীদের বুঝিয়েছে – এই বিচার নাকি ইসলামকে নির্মূল করার ষড়যন্ত্র, এই বিচার নাকি রাজনৈতিক উদ্দেশ্যপ্রণোদিত বিচার! এভাবেই পবিত্র ধর্ম এবং সাধারণ মানুষের ধর্মানুভূতিকে তারা হীন স্বার্থে ব্যবহার করার চেষ্টা করেছে, চিহ্নিত অপরাধীদের বিচারের হাত থেকে রক্ষা করতে। বাংলার নিরঙ্কুশ সাধারণ মানুষ তাতে ভোলেনি, কারণ তারা তাদের ইতিহাস জানে। তাই যখন মুক্তিযুদ্ধের ইতিহাসকে সমুন্নত রাখার ব্রত নিয়ে শান্তিপূর্ণ-অহিংস শাহবাগ গণজাগরণের জের দেশের প্রতিটি জেলায় ছড়িয়ে পড়ে, তখনও এই ধর্ম ব্যবসায়ীর দলকে আমরা দেখি আবারও আঘাত হানতে। এবার তারা খোদ শাহবাগ এবং গণ আন্দোলনকেই প্রশ্নবিদ্ধ করার চেষ্টা করছে মুক্তিযুদ্ধের চেতনার পক্ষে কলম ধরা লেখক, ব্লগার, এবং গণজাগরণের পক্ষের সবাইকে “নাস্তিক” আখ্যা দিয়ে। এক শ্রেণীর মানুষের ধর্মীয় আবেগকে পুঁজি করে তারা আবারও চেষ্টা করছে ১৯৭১-এর পক্ষে সুবিচারের এই মহান আন্দোলনকে প্রশ্নবিদ্ধ করতে, দিকভ্রান্ত করতে। এর বিরুদ্ধে প্রতিরোধ গড়ে তুলতে হবে আমাদের সবাইকে। ঠিক ১৯৭১ সালের মতো করেই তারা আজ দেশব্যাপী তাদের অপরাধী তান্ডব পরিচালনা করছে। আমরা দেখছি, এই বিচারকে বানচাল করার লক্ষ্যে দেশে চরম অস্থিরতা উসকে দেয়ার জন্য এই বকধার্মিকের দল উপাসনার স্থান মসজিদকে পর্যন্ত ব্যবহার করে মসজিদের ভেতরে জায়নামাজে আগুন ধরানো এবং কোরান শরীফ পোড়ানোর মতো গর্হিত কাজ করে অগণিত ধর্মপ্রাণ মানুষের ধর্মানুভূতিতে আঘাত হেনেছে। মসজিদকে ব্যবহার করে উসকানিমূলক বক্তব্য দিয়ে হত্যাযজ্ঞ সংঘটন করেছে। এই জঘন্য এবং ন্যাক্কারজনক কাজে বিএনপি-জামাতের কয়েকটি পত্রিকা – আমার দেশ এবং দৈনিক সংগ্রাম নগ্নভাবে এই অপকর্মের পক্ষে দিনের পর দিন প্রচারণা চালিয়েছে। ধর্মানুভূতিকে অজুহাত হিসাবে ব্যবহার করে, বিনা উসকানিতে মিছিল মিটিংয়ে এরা শুরু থেকেই বেছে বেছে পুলিশ সদস্যদের লক্ষ্য করে হামলা চালিয়েছে। শুধু তাই নয়, পুলিশের ফাঁড়ি এবং থানা আক্রমণ করেছে, জাতীয় পতাকা ছিঁড়ে ফেলেছে, মুক্তিযুদ্ধের চেতনাকে ভূলুন্ঠিত করতে শহীদ বেদিগুলোর উপরে পর্যন্ত তীব্র আক্রোশে হামলা চালিয়েছে, লাগাতার হরতাল ডেকে নির্বিচারে এই দরিদ্র দেশটির রাষ্ট্রীয় সম্পদ ধ্বংস করেছে (যা মূলত জনগণের সম্পত্তি), নজিরবিহীনভাবে মাইলের পর মাইল রেললাইন উপড়ে ফেলেছে, যানবাহনে এমনকি এম্বুলেন্সেও অগ্নিসংযোগ করে মানুষ হ্ত্যা করেছে, মুক্তিযুদ্ধের চেতনার পক্ষে লেখার অপরাধে কয়েকজন ব্লগারদের অমানবিক নিষ্ঠুরতায় নির্মমভাবে কুপিয়ে হত্যা করেছে, পোড়ামাটি নীতি অনুসরণ করে প্রাকৃতিক পরিবেশকে বিপর্যস্ত করতে লক্ষ লক্ষ গাছ কেটে ফেলেছে, এবং ধর্মীয় সংখ্যালঘুদের বাড়ি ঘরে অগ্নিসংযোগ করেছে। এই আক্রমণে জামাতের সাথে স্থানীয় বিএনপি-ও একাট্টা হয়ে নামে সারা দেশে। এ কারণে বাংলাদেশের জেলায় জেলায় ধর্মীয় সংখ্যালঘুদের অঞ্চলগুলো এখন আতংকের জনপদে পরিণত হয়েছে। উল্লেখ্য যে, শুধুমাত্র বগুড়া জেলা শহরেই যে পরিমাণ তাণ্ডব এবং ধ্বংসলীলা এরা চালিয়েছে এবং বিশেষ করে কানসাটের বিদ্যুৎ কেন্দ্রটির উপর যেভাবে হামলা পরিচালনা করা হয়েছে, স্মরণকালের কোন টর্নেডোও বাংলাদেশের বুকে এত ক্ষতিসাধন করতে পারেনি। সেই এলাকার লক্ষাধিক মানুষ সপ্তাহের পর সপ্তাহ বিদ্যুৎহীন অবস্থায় কাটিয়েছে, হাজার হাজার হেক্টর জমিতে সেচ দিতে না পারায় আবাদি জমির ফসল নষ্ট হয়ে গিয়েছে গরিব কৃষকের। এই মাপের ধ্বংসলীলা একমাত্র বিদেশি আগ্রাসী কোনো শক্তি ছাড়া বাংলাদেশের বুকে কোনো রাজনৈতিক শক্তি চালাতে পারে তা কল্পনারও অতীত। ১৯৭১-এর পর থেকে আজ পর্যন্ত বাংলাদেশের ইতিহাসে কেবলমাত্র হীন গোষ্ঠীস্বার্থে এই মাত্রায় আর কখনো ধর্মকে অপব্যবহার করা হয়নি। উপরোক্ত এই সব অপতৎপরতায় তিনটি সুনির্দিষ্ট শক্তি সক্রিয়। এখানে বিরোধী দল বিএনপির মূল লক্ষ্য হলো ক্ষমতাসীন সরকারকে ক্ষমতাচ্যুত করে নিজে ক্ষমতায় যাওয়া। জামায়াত-শিবির চক্রের লক্ষ্য হলো যে কোনো মূল্যে বিচারকে বানচাল করে চিহ্নিত যুদ্ধাপরাধীদেরকে মুক্ত করে আনা, এমনকি তা গৃহযুদ্ধের বিনিময়ে হলেও যা জামায়াত-শিবির নেতারা ইতোমধ্যেই তাদের বক্তব্যে স্পষ্ট করেছে। আর কওমি এবং অন্যান্য মাদ্রাসার গরিব ছাত্রদেরকে সাথে নিয়ে হেফাজতে ইসলামীর লক্ষ্য হলো বাংলাদেশকে তালেবান অধ্যুষিত আফগানিস্তানের মতো একটি অকার্যকর মধ্যযুগীয় রাষ্ট্রে পরিণত করা, যা তাদের ১৪ দফা দাবি থেকে এখন একেবারে স্পষ্ট। এই তিনটি চক্র নিজ নিজ ক্ষেত্রে আলাদাভাবে তৎপর থাকার পাশাপাশি সম্মিলিতভাবেও একে অন্যের উদ্দেশ্য সাধনে সহায়তা করছে। এই উদ্দেশ্য হাসিলের জন্য এমনকি দেশ অস্থিতিশীল হলেও, দেশ মধ্যযুগীয় বর্বরতার তালেবানি রাষ্ট্রে পরিণত হলেও, দেশে রক্তগঙ্গা বয়ে গেলেও এই তিন চক্রের কিছুই আসে যায় না। এই ক্রান্তিলগ্নে বিশ্বের সকল স্থানে যত বাঙালি এবং বাংলাদেশী রয়েছেন, আজ তাদের সবার দায়িত্ব হল দেশকে বাঁচানো এবং মাতৃভূমির প্রতি পবিত্র দায়িত্বের অংশ হিসেবে বিএনপি-জামাত-শিবির-হেফাজত – এই তিন চক্রের বিরুদ্ধে সর্বত্র দুর্বার প্রতিরোধ গড়ে তোলা। বন্ধুরা, সে লক্ষ্যে আমাদের করণীয় পদক্ষেপগুলো হলো – ▅ বাংলাদেশে অনুষ্ঠিত আন্তর্জাতিক অপরাধ ট্রাইব্যুনালের বিচার প্রক্রিয়ার পাশে দাঁড়ান। দেশে-বিদেশে এই বিচারের পক্ষে জনমত গড়ে তুলুন। ▅ সবার আগে নিজে জানুন ঠিক কী ঘটছে, অপর বাংলাদেশীদের জানান। সংঘবদ্ধ হোন। ▅ নিজ নিজ শহরে জন প্রতিনিধি এবং নীতিনির্ধারকদের জানান ঠিক কী ঘটছে বাংলাদেশে, জানান কীভাবে বাংলাদেশকে তালেবানি রাষ্ট্রে পরিণত করবার ষড়যন্ত্র চলছে। ▅ ফেসবুক টুইটারসহ যাবতীয় সামাজিক মিডিয়া ব্যবহার করে মূল ধারার মিডিয়াকে পরিস্থিতির ব্যাপারে অবগত করুন। ▅ ক্ষমতাসীন আওয়ামী লীগ সরকারের কাছে দাবি তুলুন – নমনীয় না হয়ে দৃঢ়তার সাথে এই সংকটের মোকাবিলা করতে হবে। ▅ সরকারের কাছে স্পষ্টভাবে এই বার্তা পৌঁছে দিন – শাহবাগ আন্দোলনের কর্মী, দেশের যাবতীয় সেক্যুলার সংগঠন, বুদ্ধিজীবী এবং মোর্চা, বাংলা ব্লগ জগতের লক্ষ লক্ষ ব্লগার/কর্মীর পাশে এসে দাঁড়ানোর এখনই সময়। এই সংকটের সময় যে কোনো মৌলবাদী অপশক্তির মোকাবেলায় এবং প্রতিরোধে দৃঢ় এবং সাহসী পদক্ষেপ নিতে হবে। অন্যথায় তা আন্দোলনের মূল চালিকাশক্তিকেই সরকার থেকে বিচ্ছিন্ন করবে, যা শেষ বিচারে প্রগতিশীল আন্দোলনকেই ক্ষতিগ্রস্ত করবে। ▅ মুক্তিযুদ্ধের চেতনাকে সমুন্নত রাখুন। ইতিহাসের এই সন্ধিক্ষণে সঠিক পদক্ষেপ গ্রহণে আমরা যদি কোনো সিদ্ধান্ত নিতে ভুল করি, কিংবা সঠিক পদক্ষেপ নিতে ব্যর্থ হই, তাহলে তার মূল্য আমাদের ভবিষ্যত প্রজন্মকেও গুনতে হবে। বন্ধুরা, আসুন প্রতিরোধের এই ক্ষণে আমরা স্বাধীন সার্বভৌম এবং অসাম্প্রদায়িক বাংলাদেশের অস্তিত্ব রক্ষার দৃঢ় প্রত্যয় নিয়ে ১৯৭১-এর মতো করেই গর্জে উঠি, সংহতিতে একতাবদ্ধ হই। জয় বাংলা। নিবেদনক্রমে – আইসিটি সাপোর্ট ফোরাম-যুক্তরাজ্য (যুক্তরাজ্যে মুক্তিযুদ্ধের পক্ষের ৭৫ সংগঠনের জোট। আইসিএসএফ এই জোটের সাথে সক্রিয়) ইন্টারন্যাশনাল ক্রাইমস স্ট্র্যাটেজি ফোরাম (ICSF) ১৯৭১ এ সংঘটিত আন্তর্জাতিক অপরাধসমূহের বিচারের মাধ্যমে বিচারহীনতার সংস্কৃতির নিরসন এবং আইনের শাসন প্রতিষ্ঠার লক্ষ্যে গঠিত স্বাধীন বিশেষজ্ঞ, কর্মী এবং সংগঠনসমূহের আন্তর্জাতিক নেটওয়ার্ক ইন্টারন্যাশনাল ক্রাইমস স্ট্র্যাটেজি ফোরাম (ICSF)। বাংলাদেশে বর্তমানে চলমান বিচার প্রক্রিয়াকে পর্যবেক্ষণ, অনুশীলন এবং প্রত্যক্ষ ও পরোক্ষ সহায়তা প্রদানের লক্ষ্যেই এই নেটওয়ার্কের প্রতিষ্ঠা। এই সব উদ্দেশ্যকে সামনে রেখে আন্তর্জাতিক অপরাধ ট্রাইবুনাল এবং এর বিভিন্ন অঙ্গসমূহকে দালিলিক, আর্কাইভ এবং গবেষণা সহায়তা প্রদান করা ছাড়াও ট্রাইবুনালের সাথে সংশ্লিষ্ট বিভিন্ন ব্যক্তি, প্রতিষ্ঠান এবং দফতরসমূহের সাথে নিয়মিত যোগাযোগ, মতামত এবং পরামর্শ বিনিময়, এবং ক্ষেত্রবিশেষে সরাসরি পদক্ষেপ গ্রহণ এই নেটওয়ার্কের উল্লেখযোগ্য কার্যক্রমের অংশ। আইসিএসএফ এর কার্যক্রম, এর প্রকল্পসমূহ, এর সাংগঠনিক ইউনিটসমূহ এবং সাংগঠনিক নীতিমালাসমূহ সম্বন্ধে আরও বিস্তারিত জানতে ঘুরে আসুন: http://icsforum.org
-trainer_interface.cc(148) LOG(INFO) Loaded 1000000 lines
-trainer_interface.cc(125) LOG(WARNING) Too many sentences are loaded! (1342367), which may slow down training.
-trainer_interface.cc(127) LOG(WARNING) Consider using --input_sentence_size=<size> and --shuffle_input_sentence=true.
-trainer_interface.cc(130) LOG(WARNING) They allow to randomly sample <size> sentences from the entire corpus.
-trainer_interface.cc(411) LOG(INFO) Loaded all 1342367 sentences
-trainer_interface.cc(418) LOG(INFO) Skipped 3036 too long sentences.
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <pad>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <unk>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <s>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: </s>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|im_start|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|im_end|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|system|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|user|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|assistant|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|tool|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|tool_result|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_sentiment|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_ner|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_qa|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_summarize|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_translate_bn_en|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_translate_en_bn|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_classify|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_generate|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_toxicity|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_nli|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_pos|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|task_paraphrase|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|lang_bn|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|lang_en|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|lang_wbn|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|lang_bnls|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|lang_mix|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|lang_code|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|positive|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|negative|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|neutral|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|mixed|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|offensive|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|think|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|/think|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|answer|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|sep|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|context|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|/context|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|question|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|passage|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|headline|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|title|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|speaker_a|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|speaker_b|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_0|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_1|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_2|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_3|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_4|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_5|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_6|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_7|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_8|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_9|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_10|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_11|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_12|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_13|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_14|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_15|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_16|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_17|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_18|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_19|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_20|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_21|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_22|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_23|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_24|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_25|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_26|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_27|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_28|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_29|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_30|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_31|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_32|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_33|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_34|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_35|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_36|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_37|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_38|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_39|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_40|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_41|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_42|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_43|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_44|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_45|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_46|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_47|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_48|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_49|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_50|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_51|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_52|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_53|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_54|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_55|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_56|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_57|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_58|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_59|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_60|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_61|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_62|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_63|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_64|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_65|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_66|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_67|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_68|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_69|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_70|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_71|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_72|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_73|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_74|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_75|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_76|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_77|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_78|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_79|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_80|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_81|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_82|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_83|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_84|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_85|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_86|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_87|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_88|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_89|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_90|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_91|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_92|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_93|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_94|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_95|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_96|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_97|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_98|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <|reserved_99|>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x00>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x01>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x02>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x03>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x04>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x05>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x06>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x07>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x08>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x09>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x0A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x0B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x0C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x0D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x0E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x0F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x10>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x11>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x12>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x13>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x14>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x15>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x16>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x17>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x18>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x19>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x1A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x1B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x1C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x1D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x1E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x1F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x20>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x21>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x22>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x23>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x24>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x25>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x26>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x27>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x28>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x29>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x2A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x2B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x2C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x2D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x2E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x2F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x30>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x31>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x32>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x33>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x34>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x35>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x36>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x37>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x38>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x39>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x3A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x3B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x3C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x3D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x3E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x3F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x40>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x41>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x42>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x43>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x44>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x45>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x46>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x47>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x48>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x49>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x4A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x4B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x4C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x4D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x4E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x4F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x50>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x51>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x52>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x53>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x54>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x55>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x56>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x57>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x58>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x59>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x5A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x5B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x5C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x5D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x5E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x5F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x60>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x61>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x62>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x63>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x64>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x65>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x66>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x67>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x68>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x69>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x6A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x6B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x6C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x6D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x6E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x6F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x70>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x71>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x72>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x73>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x74>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x75>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x76>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x77>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x78>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x79>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x7A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x7B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x7C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x7D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x7E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x7F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x80>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x81>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x82>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x83>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x84>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x85>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x86>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x87>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x88>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x89>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x8A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x8B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x8C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x8D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x8E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x8F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x90>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x91>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x92>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x93>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x94>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x95>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x96>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x97>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x98>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x99>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x9A>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x9B>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x9C>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x9D>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x9E>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0x9F>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA0>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA1>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA2>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA3>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA4>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA5>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA6>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA7>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA8>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xA9>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xAA>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xAB>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xAC>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xAD>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xAE>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xAF>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB0>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB1>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB2>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB3>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB4>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB5>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB6>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB7>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB8>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xB9>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xBA>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xBB>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xBC>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xBD>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xBE>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xBF>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC0>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC1>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC2>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC3>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC4>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC5>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC6>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC7>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC8>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xC9>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xCA>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xCB>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xCC>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xCD>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xCE>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xCF>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD0>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD1>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD2>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD3>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD4>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD5>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD6>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD7>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD8>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xD9>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xDA>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xDB>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xDC>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xDD>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xDE>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xDF>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE0>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE1>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE2>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE3>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE4>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE5>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE6>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE7>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE8>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xE9>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xEA>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xEB>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xEC>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xED>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xEE>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xEF>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF0>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF1>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF2>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF3>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF4>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF5>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF6>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF7>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF8>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xF9>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xFA>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xFB>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xFC>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xFD>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xFE>
-trainer_interface.cc(427) LOG(INFO) Adding meta_piece: <0xFF>
-trainer_interface.cc(432) LOG(INFO) Normalizing sentences...
-trainer_interface.cc(541) LOG(INFO) all chars count=3126618359
-trainer_interface.cc(552) LOG(INFO) Done: 99.99% characters are covered.
-trainer_interface.cc(562) LOG(INFO) Alphabet size=335
-trainer_interface.cc(563) LOG(INFO) Final character coverage=0.9999
-trainer_interface.cc(594) LOG(INFO) Done! preprocessed 1342367 sentences.
-unigram_model_trainer.cc(265) LOG(INFO) Making suffix array...
-unigram_model_trainer.cc(269) LOG(INFO) Extracting frequent sub strings... node_num=1695410983
-unigram_model_trainer.cc(312) LOG(INFO) Initialized 1000335 seed sentencepieces
-trainer_interface.cc(600) LOG(INFO) Tokenizing input sentences with whitespace: 1342367
-trainer_interface.cc(611) LOG(INFO) Done! 9623020
-unigram_model_trainer.cc(602) LOG(INFO) Using 9623020 sentences for EM training
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=734209 obj=13.0833 num_tokens=29086133 num_tokens/piece=39.6156
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=605782 obj=10.6236 num_tokens=29149160 num_tokens/piece=48.1182
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=454320 obj=10.5945 num_tokens=29335383 num_tokens/piece=64.5699
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=454146 obj=10.5911 num_tokens=29408894 num_tokens/piece=64.7565
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=340609 obj=10.5894 num_tokens=29758739 num_tokens/piece=87.3692
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=340607 obj=10.5949 num_tokens=29761175 num_tokens/piece=87.3769
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=255455 obj=10.6013 num_tokens=30478843 num_tokens/piece=119.312
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=255453 obj=10.602 num_tokens=30478870 num_tokens/piece=119.313
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=191589 obj=10.6438 num_tokens=31606527 num_tokens/piece=164.97
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=191588 obj=10.6361 num_tokens=31608022 num_tokens/piece=164.979
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=143691 obj=10.71 num_tokens=32777576 num_tokens/piece=228.112
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=143691 obj=10.6903 num_tokens=32785595 num_tokens/piece=228.167
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=107768 obj=10.8037 num_tokens=34027288 num_tokens/piece=315.746
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=107768 obj=10.7789 num_tokens=34032713 num_tokens/piece=315.796
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=80826 obj=10.9191 num_tokens=35333424 num_tokens/piece=437.154
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=80826 obj=10.8898 num_tokens=35334812 num_tokens/piece=437.171
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=60619 obj=11.0577 num_tokens=36730960 num_tokens/piece=605.931
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=60619 obj=11.0223 num_tokens=36732818 num_tokens/piece=605.962
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=0 size=52800 obj=11.1131 num_tokens=37400964 num_tokens/piece=708.352
-unigram_model_trainer.cc(618) LOG(INFO) EM sub_iter=1 size=52800 obj=11.0951 num_tokens=37402769 num_tokens/piece=708.386
-trainer_interface.cc(689) LOG(INFO) Saving model: saved/tokenizer/banglagamba_tokenizer.model
-trainer_interface.cc(701) LOG(INFO) Saving vocabs: saved/tokenizer/banglagamba_tokenizer.vocab
-  Extracted 1,345,404 docs  (7.32 GB)
-Training input size: 7.32 GB
-
-Training (may take 2–6 hours on a large corpus)...
-
-[deleted] Temp file freed 7.32 GB
-
-[OK] Training complete!
-   Model: saved/tokenizer/banglagamba_tokenizer.model
-   Vocab: saved/tokenizer/banglagamba_tokenizer.vocab
-
-============================================================
-  Tokenizer Validation (vocab=48000)
-============================================================
-
-  [Bangla formal]  9 tok / 7 words = 1.29 fertility
-    → ['▁আমি', '▁বাংলাদেশের', '▁মানুষ', '।', '▁আমি', '▁বাংলায়', '▁কথা', '▁বলি', '।']
-
-  [Bangla news]  7 tok / 6 words = 1.17 fertility
-    → ['▁প্রধানমন্ত্রী', '▁আজ', '▁জাতীয়', '▁সংসদে', '▁ভাষণ', '▁দিয়েছেন', '।']
-
-  [English]  13 tok / 9 words = 1.44 fertility
-    → ['▁The', '▁quick', '▁brown', '▁', 'fox', '▁jump', 's', '▁over', '▁the', '▁la', 'zy', '▁dog']...
-
-  [Banglish]  17 tok / 6 words = 2.83 fertility
-    → ['▁', 'ami', '▁to', 'm', 'ake', '▁', 'bha', 'lob', 'ashi', ',', '▁tu', 'mi']...
-
-  [Code-mixed]  10 tok / 8 words = 1.25 fertility
-    → ['▁এই', '▁product', '▁টা', '▁really', '▁ভালো', ',', '▁must', '▁buy', '▁করো', '।']
-
-  [Python]  15 tok / 4 words = 3.75 fertility
-    → ['▁def', '▁h', 'ello', '(', '):', '▁print', '(', "'", 'H', 'ello', ',', '▁World']...
-
-  Special token check:
-    [OK] <pad>                          -> ID 0
-    [OK] <unk>                          -> ID 1
-    [OK] <s>                            -> ID 2
-    [OK] </s>                           -> ID 3
-    [OK] <|im_start|>                   -> ID 4
-    [OK] <|lang_bn|>                    -> ID 23
-    [OK] <|positive|>                   -> ID 29
-    [OK] <|reserved_0|>                 -> ID 46
-    [OK] <|reserved_99|>                -> ID 145
