@@ -93,6 +93,11 @@ def normalize_text(text: str, none_policy: str, allow_english: bool):
     return bn_normalize_rs.normalize_sentence(text, none_policy, allow_english)
 
 
+def count_lines(path: Path) -> int:
+    with open(path, "rb") as f:
+        return sum(buf.count(b"\n") for buf in iter(lambda: f.read(1 << 20), b""))
+
+
 def process_file(input_path: Path, output_path: Path, none_policy: str,
                  allow_english: bool, dry_run: bool) -> dict:
     """Read input, normalize, write to output."""
@@ -101,9 +106,11 @@ def process_file(input_path: Path, output_path: Path, none_policy: str,
     failed_log_path = None
     failed_log = None
 
+    total = count_lines(input_path)
+
     if dry_run:
         with open(input_path, encoding="utf-8") as f:
-            for line in tqdm(f, desc=f"  {input_path.stem} (dry run)", unit="docs", unit_scale=True):
+            for line in tqdm(f, desc=f"  {input_path.stem} (dry run)", total=total, unit="docs", unit_scale=True):
                 stats["read"] += 1
                 doc = json.loads(line)
                 if doc.get("language_region", "").startswith("BD"):
@@ -122,7 +129,7 @@ def process_file(input_path: Path, output_path: Path, none_policy: str,
     try:
         with open(input_path, encoding="utf-8") as fin, \
              open(output_path, "w", encoding="utf-8") as fout:
-            for line in tqdm(fin, desc=f"  {input_path.stem}", unit="docs", unit_scale=True):
+            for line in tqdm(fin, desc=f"  {input_path.stem}", total=total, unit="docs", unit_scale=True):
                 stats["read"] += 1
                 doc = json.loads(line)
 
