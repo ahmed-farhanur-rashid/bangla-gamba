@@ -75,9 +75,13 @@ def parse_args():
     return p.parse_args()
 
 
+NONE_POLICY = "keep_original"
+ALLOW_ENGLISH = False
+
+
 def normalize_text(text: str) -> str:
     """Normalize a full text string using the Rust normalizer."""
-    return bn_normalize_rs.normalize_sentence(text, "keep_original", False)
+    return bn_normalize_rs.normalize_sentence(text, NONE_POLICY, ALLOW_ENGLISH)
 
 
 def process_file(input_path: Path, output_path: Path, dry_run: bool) -> dict:
@@ -115,7 +119,10 @@ def process_file(input_path: Path, output_path: Path, dry_run: bool) -> dict:
 
 
 def main():
+    global NONE_POLICY, ALLOW_ENGLISH
     args = parse_args()
+    NONE_POLICY = args.none_policy
+    ALLOW_ENGLISH = args.allow_english
 
     # Build file list: (input_path, output_path) pairs
     if args.input and args.output:
