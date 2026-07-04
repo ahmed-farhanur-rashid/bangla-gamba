@@ -14,8 +14,8 @@ Output (v3 schema):
    "language_region": "BD", "word_count": N}
 
 Usage:
-  python scripts/downloaders/01c_download_sangraha_bn.py
-  python scripts/downloaders/01c_download_sangraha_bn.py --max-docs 738322
+  python pretrain-corpus-pipeline/downloaders/01c_download_sangraha_bn.py
+  python pretrain-corpus-pipeline/downloaders/01c_download_sangraha_bn.py --max-docs 738322
 """
 
 from __future__ import annotations

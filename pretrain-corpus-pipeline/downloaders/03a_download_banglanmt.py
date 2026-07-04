@@ -11,8 +11,8 @@ Output (v3 schema — two lines per pair):
    "language_region": "BN_EN_parallel", "word_count": N}
 
 Usage:
-  python scripts/downloaders/03a_download_banglanmt.py
-  python scripts/downloaders/03a_download_banglanmt.py --max-docs 5000
+  python pretrain-corpus-pipeline/downloaders/03a_download_banglanmt.py
+  python pretrain-corpus-pipeline/downloaders/03a_download_banglanmt.py --max-docs 5000
 """
 
 from __future__ import annotations

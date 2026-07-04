@@ -12,8 +12,8 @@ Input:  saved/data/raw/wiki_bangla.jsonl
 Output: saved/data/deduped/bangla_deduped.jsonl
 
 Usage:
-  python scripts/pipeline/01b_dedup_mono_bn.py
-  python scripts/pipeline/01b_dedup_mono_bn.py --delete-raw
+  python pretrain-corpus-pipeline/01b_dedup_mono_bn.py
+  python pretrain-corpus-pipeline/01b_dedup_mono_bn.py --delete-raw
 """
 
 from __future__ import annotations

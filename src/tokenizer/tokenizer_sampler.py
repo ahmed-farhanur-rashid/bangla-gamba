@@ -9,9 +9,9 @@ Output:
   saved/data/tokenizer_set/corpus.jsonl  — shuffled mix
 
 Usage:
-  python scripts/pipeline/tokenizer_sampler.py
-  python scripts/pipeline/tokenizer_sampler.py --total-words 500_000_000
-  python scripts/pipeline/tokenizer_sampler.py --ratio 0.80
+  python src/tokenizer/tokenizer_sampler.py
+  python src/tokenizer/tokenizer_sampler.py --total-words 500_000_000
+  python src/tokenizer/tokenizer_sampler.py --ratio 0.80
 """
 
 from __future__ import annotations

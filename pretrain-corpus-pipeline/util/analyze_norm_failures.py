@@ -6,13 +6,13 @@ Reads the JSONL failure log produced by 01d_bn_normalize.py with --none-policy d
 Outputs a structured YAML report to saved/reports/.
 
 Usage:
-    python -m scripts.util.analyze_norm_failures
+    python pretrain-corpus-pipeline/util/analyze_norm_failures.py
 
-    python -m scripts.util.analyze_norm_failures
+    python pretrain-corpus-pipeline/util/analyze_norm_failures.py \
         --input saved/logs/bangla_deduped_norm_failures.jsonl
         
-    python3 -m scripts.util.analyze_norm_failures
-        --input saved/logs/bangla_deduped_norm_failures.jsonl
+    python3 pretrain-corpus-pipeline/util/analyze_norm_failures.py \
+        --input saved/logs/bangla_deduped_norm_failures.jsonl \
         --output saved/reports/bangla_deduped_norm_failures.yaml
 """
 

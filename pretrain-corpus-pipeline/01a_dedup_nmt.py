@@ -8,8 +8,8 @@ Input:  saved/data/raw/nllb.jsonl + saved/data/raw/banglanmt.jsonl
 Output: saved/data/cleaned/nmt.jsonl
 
 Usage:
-  python scripts/pipeline/01a_dedup_nmt.py
-  python scripts/pipeline/01a_dedup_nmt.py --delete-raw
+  python pretrain-corpus-pipeline/01a_dedup_nmt.py
+  python pretrain-corpus-pipeline/01a_dedup_nmt.py --delete-raw
 """
 
 from __future__ import annotations

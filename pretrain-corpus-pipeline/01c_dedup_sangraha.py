@@ -10,10 +10,10 @@ Input:  saved/data/deduped/bangla_deduped.jsonl  (base, read-only)
 Output: saved/data/deduped/sangraha_deduped.jsonl
 
 Usage:
-  python scripts/pipeline/01c_dedup_sangraha.py
-  python scripts/pipeline/01c_dedup_sangraha.py --max-words 2_000_000_000
-  python scripts/pipeline/01c_dedup_sangraha.py --dry-run
-  python scripts/pipeline/01c_dedup_sangraha.py --max-docs 1_000_000
+  python pretrain-corpus-pipeline/01c_dedup_sangraha.py
+  python pretrain-corpus-pipeline/01c_dedup_sangraha.py --max-words 2_000_000_000
+  python pretrain-corpus-pipeline/01c_dedup_sangraha.py --dry-run
+  python pretrain-corpus-pipeline/01c_dedup_sangraha.py --max-docs 1_000_000
 """
 
 from __future__ import annotations

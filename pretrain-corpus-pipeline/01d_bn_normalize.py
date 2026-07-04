@@ -6,11 +6,11 @@ Reads from deduped/, writes to cleaned/.
 Run after dedup (01b, 01c) to apply full Bangla-specific normalization.
 
 Usage:
-    python scripts/pipeline/01d_bn_normalize.py                                        # both files
-    python scripts/pipeline/01d_bn_normalize.py --files deduped/bangla_deduped.jsonl
-    python scripts/pipeline/01d_bn_normalize.py --input deduped/sangraha_deduped.jsonl --output cleaned/sangraha.jsonl
-    python scripts/pipeline/01d_bn_normalize.py --none-policy drop_and_collect         # drop failed words + log
-    python scripts/pipeline/01d_bn_normalize.py --dry-run                              # stats only
+    python pretrain-corpus-pipeline/01d_bn_normalize.py                                        # both files
+    python pretrain-corpus-pipeline/01d_bn_normalize.py --files deduped/bangla_deduped.jsonl
+    python pretrain-corpus-pipeline/01d_bn_normalize.py --input deduped/sangraha_deduped.jsonl --output cleaned/sangraha.jsonl
+    python pretrain-corpus-pipeline/01d_bn_normalize.py --none-policy drop_and_collect         # drop failed words + log
+    python pretrain-corpus-pipeline/01d_bn_normalize.py --dry-run                              # stats only
 """
 
 from __future__ import annotations

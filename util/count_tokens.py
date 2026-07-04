@@ -4,9 +4,9 @@ Count tokens in JSONL files using a HuggingFace tokenizer.
 Reports total tokens, tokens per doc stats, and overall token count.
 
 Usage:
-  python scripts/util/count_tokens.py saved/data/cleaned/bangla.jsonl
-  python scripts/util/count_tokens.py saved/data/cleaned/ --tokenizer saved/tokenizer/hf/
-  python scripts/util/count_tokens.py saved/data/cleaned/bangla.jsonl --sample 50000
+  python util/count_tokens.py saved/data/cleaned/bangla.jsonl
+  python util/count_tokens.py saved/data/cleaned/ --tokenizer saved/tokenizer/hf/
+  python util/count_tokens.py saved/data/cleaned/bangla.jsonl --sample 50000
 """
 
 from __future__ import annotations

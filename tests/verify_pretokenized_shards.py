@@ -4,7 +4,7 @@ Verify pretokenized shards before training.
 Read-only sanity checks on saved/data/pretokenized/{bangla,english,nmt}/train/.
 
 Usage:
-  python scripts/pipeline/05_verify.py
+  python tests/verify_pretokenized_shards.py
 """
 
 from __future__ import annotations

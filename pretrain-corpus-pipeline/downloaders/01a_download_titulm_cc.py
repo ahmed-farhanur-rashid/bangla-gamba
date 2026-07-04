@@ -7,7 +7,7 @@ Output (v3 schema):
    "language_region": "BD", "word_count": N}
 
 Usage:
-  python scripts/downloaders/01a_download_titulm_cc.py
+  python pretrain-corpus-pipeline/downloaders/01a_download_titulm_cc.py
 """
 
 from __future__ import annotations

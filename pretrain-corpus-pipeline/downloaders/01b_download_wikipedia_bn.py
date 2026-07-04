@@ -7,8 +7,8 @@ Output (v3 schema):
    "language_region": "BD", "word_count": N}
 
 Usage:
-  python scripts/downloaders/01b_download_wikipedia_bn.py
-  python scripts/downloaders/01b_download_wikipedia_bn.py --max-docs 5000
+  python pretrain-corpus-pipeline/downloaders/01b_download_wikipedia_bn.py
+  python pretrain-corpus-pipeline/downloaders/01b_download_wikipedia_bn.py --max-docs 5000
 """
 
 from __future__ import annotations

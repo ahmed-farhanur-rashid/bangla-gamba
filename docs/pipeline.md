@@ -75,9 +75,9 @@ Every downloader applies:
 ### Bangla Sources
 
 ```bash
-python scripts/downloaders/01a_download_titulm_cc.py
-python scripts/downloaders/01b_download_wikipedia_bn.py
-python scripts/downloaders/01c_download_sangraha_bn.py
+python pretrain-corpus-pipeline/downloaders/01a_download_titulm_cc.py
+python pretrain-corpus-pipeline/downloaders/01b_download_wikipedia_bn.py
+python pretrain-corpus-pipeline/downloaders/01c_download_sangraha_bn.py
 ```
 
 | Script | Source | Output | Notes |
@@ -91,7 +91,7 @@ python scripts/downloaders/01c_download_sangraha_bn.py
 ### English Source
 
 ```bash
-python scripts/downloaders/02a_download_english.py --word-budget 2_000_000_000
+python pretrain-corpus-pipeline/downloaders/02a_download_english.py --word-budget 2_000_000_000
 ```
 
 | Script | Source | Output | Notes |
@@ -103,8 +103,8 @@ English includes an additional content filter (adult/spam pattern matching) beyo
 ### NMT Sources
 
 ```bash
-python scripts/downloaders/03a_download_banglanmt.py
-python scripts/downloaders/03b_download_nllb.py
+python pretrain-corpus-pipeline/downloaders/03a_download_banglanmt.py
+python pretrain-corpus-pipeline/downloaders/03b_download_nllb.py
 ```
 
 | Script | Source | Output | Notes |
@@ -127,7 +127,7 @@ Both sides are whitespace-collapsed (no paragraph breaks). Pairs are filtered by
 ### NMT Dedup
 
 ```bash
-python scripts/pipeline/01a_dedup_nmt.py
+python pretrain-corpus-pipeline/01a_dedup_nmt.py
 ```
 
 - **Input:** `raw/nllb.jsonl` + `raw/banglanmt.jsonl`
@@ -137,7 +137,7 @@ python scripts/pipeline/01a_dedup_nmt.py
 ### Bangla Base Dedup (Wiki + TituLLM)
 
 ```bash
-python scripts/pipeline/01b_dedup_mono_bn.py
+python pretrain-corpus-pipeline/01b_dedup_mono_bn.py
 ```
 
 - **Input:** `raw/wiki_bangla.jsonl` + `raw/titullm_cc.jsonl`
@@ -148,8 +148,8 @@ python scripts/pipeline/01b_dedup_mono_bn.py
 ### Sangraha Dedup Against Base
 
 ```bash
-python scripts/pipeline/01c_dedup_sangraha.py
-python scripts/pipeline/01c_dedup_sangraha.py --max-words 2_000_000_000  # optional cap
+python pretrain-corpus-pipeline/01c_dedup_sangraha.py
+python pretrain-corpus-pipeline/01c_dedup_sangraha.py --max-words 2_000_000_000  # optional cap
 ```
 
 - **Input:** `deduped/bangla_deduped.jsonl` (read-only, builds hash set) + `raw/sangraha_verified_bn.jsonl`
@@ -163,13 +163,13 @@ python scripts/pipeline/01c_dedup_sangraha.py --max-words 2_000_000_000  # optio
 
 ```bash
 # Bangla (wiki + titullm)
-python scripts/pipeline/01d_bn_normalize.py \
+python pretrain-corpus-pipeline/01d_bn_normalize.py \
   --input saved/data/deduped/bangla_deduped.jsonl \
   --output saved/data/cleaned/bangla.jsonl \
   --none-policy drop_and_collect
 
 # Sangraha (West Bengali — kept separate for ratio control)
-python scripts/pipeline/01d_bn_normalize.py \
+python pretrain-corpus-pipeline/01d_bn_normalize.py \
   --input saved/data/deduped/sangraha_deduped.jsonl \
   --output saved/data/cleaned/sangraha.jsonl \
   --none-policy drop_and_collect
@@ -188,7 +188,7 @@ python scripts/pipeline/01d_bn_normalize.py \
 ### Sample Corpus
 
 ```bash
-python scripts/pipeline/02_tokenizer_sampler.py \
+python src/tokenizer/tokenizer_sampler.py \
   --total-words 250_000_000 \
   --ratio 0.85
 ```
@@ -227,7 +227,7 @@ sed -i 's/"model_max_length": [0-9]*/"model_max_length": 2048/' \
   saved/tokenizer/hf/tokenizer_config.json
 
 # Evaluate
-python scripts/util/evaluate_tokenizer.py
+python tests/evaluate_tokenizer.py
 ```
 
 ---
@@ -235,16 +235,16 @@ python scripts/util/evaluate_tokenizer.py
 ## Step 5 — Pretokenize & Pack Sequences
 
 ```bash
-python scripts/pipeline/03_pretokenize.py --source bangla
-python scripts/pipeline/03_pretokenize.py --source sangraha
-python scripts/pipeline/03_pretokenize.py --source english
-python scripts/pipeline/03_pretokenize.py --source nmt
+python scripts/pretokenizer.py --source bangla
+python scripts/pretokenizer.py --source sangraha
+python scripts/pretokenizer.py --source english
+python scripts/pretokenizer.py --source nmt
 ```
 
 Or all at once:
 
 ```bash
-python scripts/pipeline/03_pretokenize.py
+python scripts/pipeline/pretokenizer.py
 ```
 
 - **Input:** `cleaned/{bangla,sangraha,english,nmt}.jsonl`

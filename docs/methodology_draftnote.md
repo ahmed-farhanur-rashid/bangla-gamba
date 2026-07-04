@@ -157,7 +157,7 @@ The tokenizer is trained on a **sampled subset** of the downloaded data, not the
 
 **Sampling strategy:**
 1. Reservoir-sample 425M words from Bangla sources (TituLLM + Wikipedia) and 75M words from English sources (FineWeb-Edu), totaling 500M words (85:15 BN:EN ratio maintained)
-2. The sampler (`02_tokenizer_sampler.py`) performs uniform random sampling from cleaned JSONL files, then shuffle-merges the two language streams with a weighted random merge (probability of selecting Bangla = 85%)
+2. The sampler (`tokenizer_sampler.py`) performs uniform random sampling from cleaned JSONL files, then shuffle-merges the two language streams with a weighted random merge (probability of selecting Bangla = 85%)
 3. The resulting corpus is a representative sample of the target 85:15 training composition: 1,249,199 Bangla docs + 96,205 English docs = 1,345,404 docs total (7.4 GB JSONL)
 
 **Tokenizer configuration:**
@@ -231,27 +231,27 @@ The complete preprocessing pipeline executes in the following order:
 
 ```
 Download (parallel):
-  1. python scripts/downloaders/01a_download_titulm_cc.py --doc-limit 15000000
-  2. python scripts/downloaders/01b_download_wikipedia.py
-  3. python scripts/downloaders/02a_download_english.py --word-budget 2_000_000_000
-  4. python scripts/downloaders/03b_download_nllb.py          ← before BanglaNMT
-  5. python scripts/downloaders/03a_download_banglanmt.py
+  1. python pretrain-corpus-pipeline/downloaders/01a_download_titulm_cc.py --doc-limit 15000000
+  2. python pretrain-corpus-pipeline/downloaders/01b_download_wikipedia_bn.py
+  3. python pretrain-corpus-pipeline/downloaders/02a_download_english.py --word-budget 2_000_000_000
+  4. python pretrain-corpus-pipeline/downloaders/03b_download_nllb.py          ← before BanglaNMT
+  5. python pretrain-corpus-pipeline/downloaders/03a_download_banglanmt.py
 
 Post-download:
-  6. python scripts/pipeline/01c_bn_normalize.py              ← one-time Bangla normalization
+  6. python pretrain-corpus-pipeline/01d_bn_normalize.py              ← one-time Bangla normalization
 
 Tokenizer training:
-  7. python scripts/pipeline/02_tokenizer_sampler.py           ← sample 500M words (85:15 BN:EN)
+  7. python src/tokenizer/tokenizer_sampler.py           ← sample 500M words (85:15 BN:EN)
   8. python -m src.tokenizer.train_tokenizer                  ← train SentencePiece Unigram
   9. python -m src.tokenizer.wrapper                          ← wrap .model → HF tokenizer
 
 Cross-source dedup:
-  10. python scripts/pipeline/01a_dedup_nmt.py                ← NLLB ∩ BanglaNMT
-  11. python scripts/pipeline/01b_dedup_mono.py               ← TituLLM ∩ Wikipedia
+  10. python pretrain-corpus-pipeline/01a_dedup_nmt.py                ← NLLB ∩ BanglaNMT
+  11. python pretrain-corpus-pipeline/01b_dedup_mono_bn.py               ← TituLLM ∩ Wikipedia
 
 Pretokenization + verification:
-  12. python scripts/pipeline/03_pretokenize.py               ← pack into .npy shards
-  13. python scripts/pipeline/04_verify.py                    ← sanity check shards
+  12. python scripts/pipeline/pretokenizer.py               ← pack into .npy shards
+  13. python tests/verify_pretokenized_shards.py                    ← sanity check shards
 
 Training:
   14. Set max_steps in configs/default_training.yaml

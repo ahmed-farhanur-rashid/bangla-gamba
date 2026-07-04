@@ -2,8 +2,8 @@
 Count exact duplicates in JSONL files by SHA-256 hash.
 
 Usage:
-  python scripts/util/count_dupes.py saved/data/raw/titullm.jsonl
-  python scripts/util/count_dupes.py saved/data/cleaned/bangla.jsonl --field source
+  python util/count_dupes.py saved/data/raw/titullm.jsonl
+  python util/count_dupes.py saved/data/cleaned/bangla.jsonl --field source
 """
 
 from __future__ import annotations

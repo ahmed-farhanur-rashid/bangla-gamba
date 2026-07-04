@@ -6,10 +6,10 @@ Compares BanglaGamba against reference tokenizers on fertility, compression,
 UNK rate, and speed. Also runs quick sanity checks (--sanity).
 
 Usage:
-  python scripts/util/evaluate_tokenizer.py
-  python scripts/util/evaluate_tokenizer.py --sanity --skip-references
-  python scripts/util/evaluate_tokenizer.py --sample-size 5000
-  python scripts/util/evaluate_tokenizer.py --categories bangla_formal english
+  python tests/evaluate_tokenizer.py
+  python tests/evaluate_tokenizer.py --sanity --skip-references
+  python tests/evaluate_tokenizer.py --sample-size 5000
+  python tests/evaluate_tokenizer.py --categories bangla_formal english
 """
 
 from __future__ import annotations
@@ -78,6 +78,13 @@ TEST_SENTENCES = {
         "import torch; x = torch.randn(3, 3)",
         "for i in range(10): print(i ** 2)",
         "with open('data.json') as f: data = json.load(f)",
+    ],
+    "bangla_edge_cases": [
+        "রাষ্ট্রবিজ্ঞান, স্বাতন্ত্র্য, ঐচ্ছিক, দ্ব্যর্থহীন, জলোচ্ছ্বাস",
+        "😊 👍 🇧🇩 ✨ 🚀",
+        "২০২৪ সালে ১,৫০০ টাকা দাম ছিল।",
+        "Check out https://bengali.ai and email test@example.com!",
+        "র‍্যাব (RAB) এর অভিযান।",
     ],
 }
 
@@ -159,6 +166,9 @@ def sample_corpus(path: Path, n: int = 10_000, seed: int = 42) -> list[str]:
 
 def compute_metrics(tokenizer, texts: list[str]) -> dict:
     total_tokens = total_words = total_chars = total_unk = 0
+    round_trip_failures = 0
+    hyper_fragmented_words = 0
+    total_words_measured = 0
     unk_id = tokenizer.unk_token_id or 0
 
     t0 = time.time()
@@ -166,7 +176,21 @@ def compute_metrics(tokenizer, texts: list[str]) -> dict:
         ids = tokenizer.encode(text, add_special_tokens=False)
         total_tokens += len(ids)
         total_unk    += sum(1 for t in ids if t == unk_id)
-        total_words  += max(len(text.split()), 1)
+        
+        # Round trip accuracy (allow normal spacing differences)
+        decoded = tokenizer.decode(ids, skip_special_tokens=True).strip()
+        if "".join(decoded.split()) != "".join(text.split()):
+            round_trip_failures += 1
+            
+        # Fragmentation analysis
+        words = text.split()
+        total_words += max(len(words), 1)
+        for w in words:
+            w_ids = tokenizer.encode(w, add_special_tokens=False)
+            if len(w_ids) > 3:  # Hyper fragmented if a single word takes >3 tokens
+                hyper_fragmented_words += 1
+            total_words_measured += 1
+            
         total_chars  += len(text)
     elapsed = time.time() - t0
 
@@ -178,6 +202,8 @@ def compute_metrics(tokenizer, texts: list[str]) -> dict:
         "fertility":          round(total_tokens / max(total_words, 1), 3),
         "compression":        round(total_chars  / max(total_tokens, 1), 2),
         "unk_rate_pct":       round(total_unk    / max(total_tokens, 1) * 100, 4),
+        "round_trip_fail_pct":round(round_trip_failures / n * 100, 2),
+        "hyper_frag_pct":     round(hyper_fragmented_words / max(total_words_measured, 1) * 100, 2),
         "docs_per_sec":       round(n / max(elapsed, 1e-6), 1),
     }
 
@@ -267,6 +293,8 @@ def print_comparison_table(results: dict, title: str) -> None:
         ("Fertility (tokens/word, lower = better)",    "fertility",    ".3f"),
         ("Compression (chars/token, higher = better)", "compression",  ".2f"),
         ("UNK rate % (lower = better)",                "unk_rate_pct", ".4f"),
+        ("Round-Trip Failure % (lower = better)",      "round_trip_fail_pct", ".2f"),
+        ("Hyper-Fragmentation % (words > 3 tokens)",   "hyper_frag_pct", ".2f"),
         ("Speed (docs/sec)",                           "docs_per_sec", ".1f"),
     ]:
         print(f"\n  {label}")
@@ -313,6 +341,8 @@ def save_report(category_results: dict, corpus_results: dict, all_tokenizers: di
             ("Fertility (tokens/word, lower = better)",    "fertility",    ".3f"),
             ("Compression (chars/token, higher = better)", "compression",  ".2f"),
             ("UNK Rate % (lower = better)",                "unk_rate_pct", ".4f"),
+            ("Round-Trip Failure % (lower = better)",      "round_trip_fail_pct", ".2f"),
+            ("Hyper-Fragmentation % (words > 3 tokens)",   "hyper_frag_pct", ".2f"),
         ]:
             lines += [f"### {title}\n"] + md_table(results, metric, fmt, tok_names)
 
@@ -327,7 +357,7 @@ def save_report(category_results: dict, corpus_results: dict, all_tokenizers: di
                 "|---|" + "---|" * len(tok_names),
                 *[
                     "| {} |".format(m) + "".join(f" {cr[n].get(m, '—')} |" for n in tok_names)
-                    for m in ["fertility", "compression", "unk_rate_pct", "avg_tokens_per_doc", "docs_per_sec"]
+                    for m in ["fertility", "compression", "unk_rate_pct", "round_trip_fail_pct", "hyper_frag_pct", "avg_tokens_per_doc", "docs_per_sec"]
                 ],
                 "",
             ]

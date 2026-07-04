@@ -11,9 +11,9 @@ No language token injection — tokens are already in text from downloaders.
 No eval split — everything goes to train.
 
 Usage:
-  python scripts/pipeline/04_pretokenize.py
-  python scripts/pipeline/04_pretokenize.py --max-tokens 5_000_000_000
-  python scripts/pipeline/04_pretokenize.py --delete-cleaned
+  python scripts/pretokenizer.py
+  python scripts/pretokenizer.py --max-tokens 5_000_000_000
+  python scripts/pretokenizer.py --delete-cleaned
 """
 
 from __future__ import annotations

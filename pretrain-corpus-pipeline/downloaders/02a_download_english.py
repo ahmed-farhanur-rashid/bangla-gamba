@@ -7,8 +7,8 @@ Output (v3 schema):
    "language_region": "EN", "word_count": N}
 
 Usage:
-  python scripts/downloaders/02a_download_english.py
-  python scripts/downloaders/02a_download_english.py --word-budget 2_000_000_000
+  python pretrain-corpus-pipeline/downloaders/02a_download_english.py
+  python pretrain-corpus-pipeline/downloaders/02a_download_english.py --word-budget 2_000_000_000
 
 Changes from v1:
   - Switched to FineWeb-Edu (HuggingFaceFW/fineweb-edu) which is educationally
@@ -79,7 +79,7 @@ def is_clean(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def _stream_config(repo: str, config: str, word_budget: int, total_words: int,
-                   f, docs: int, skipped: int, filtered_content: int):
+                   f, docs: int, skipped: int):
     """Stream one FineWeb-Edu config until budget is met. Returns updated counters."""
     from datasets import load_dataset
 
@@ -102,17 +102,12 @@ def _stream_config(repo: str, config: str, word_budget: int, total_words: int,
             skipped += 1
             continue
 
-        if not is_clean(text):
-            filtered_content += 1
-            skipped += 1
-            continue
-
         write_doc(f, f"{LANG_EN}{text}", SOURCE, SOURCE_TYPE,
                   LANGUAGE_REGION, word_count)
         total_words += word_count
         docs += 1
 
-    return total_words, docs, skipped, filtered_content
+    return total_words, docs, skipped
 
 
 def download_fineweb(word_budget: int):
@@ -134,15 +129,14 @@ def download_fineweb(word_budget: int):
     total_words = existing * AVG_WORDS_PER_DOC
     docs = 0
     skipped = 0
-    filtered_content = 0
 
     with open(OUTPUT, "a") as f:
         for repo, config in FINEWEB_EDU_CONFIGS:
             if total_words >= word_budget:
                 break
-            total_words, docs, skipped, filtered_content = _stream_config(
+            total_words, docs, skipped = _stream_config(
                 repo, config, word_budget, total_words,
-                f, docs, skipped, filtered_content,
+                f, docs, skipped,
             )
             if total_words < word_budget:
                 remaining = word_budget - total_words
@@ -158,7 +152,6 @@ def download_fineweb(word_budget: int):
     print(f"  Documents      : {docs:>12,}")
     print(f"  Words collected: {total_words:>12,}")
     print(f"  Skipped        : {skipped:>12,}")
-    print(f"  Content filter : {filtered_content:>12,}  (adult/spam blocked)")
     print(f"  Output         : {OUTPUT}  ({size_mb:.1f} MB)")
 
 

@@ -13,7 +13,7 @@ Output (v3 schema — two lines per pair):
    "language_region": "BN_EN_parallel", "word_count": N}
 
 Usage:
-  python scripts/downloaders/03b_download_nllb.py
+  python pretrain-corpus-pipeline/downloaders/03b_download_nllb.py
 
 Edit SETTINGS below before running.
 """
