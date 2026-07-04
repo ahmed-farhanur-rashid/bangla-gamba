@@ -6,11 +6,11 @@ Reads from deduped/, writes to cleaned/.
 Run after dedup (01b, 01c) to apply full Bangla-specific normalization.
 
 Usage:
-    python scripts/pipeline/01d_bn_normalize.py                                    # both files
+    python scripts/pipeline/01d_bn_normalize.py                                        # both files
     python scripts/pipeline/01d_bn_normalize.py --files deduped/bangla_deduped.jsonl
     python scripts/pipeline/01d_bn_normalize.py --input deduped/sangraha_deduped.jsonl --output cleaned/sangraha.jsonl
-    python scripts/pipeline/01d_bn_normalize.py --none-policy drop                 # drop failed words
-    python scripts/pipeline/01d_bn_normalize.py --dry-run                          # stats only
+    python scripts/pipeline/01d_bn_normalize.py --none-policy drop_and_collect         # drop failed words + log
+    python scripts/pipeline/01d_bn_normalize.py --dry-run                              # stats only
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ except ImportError:
 
 DEDUPED_DIR = Path("saved/data/deduped")
 CLEANED_DIR = Path("saved/data/cleaned")
-LOG_DIR = Path("saved/data/logs")
+LOG_DIR = Path("saved/logs")
 
 DEFAULT_FILES = [
     "saved/data/deduped/bangla_deduped.jsonl",
@@ -63,9 +63,9 @@ def parse_args():
     )
     p.add_argument(
         "--none-policy",
-        default="collect",
-        choices=["drop", "keep_original", "error", "collect"],
-        help="What to do when a Bangla word normalizes to None (default: collect)",
+        default="drop_and_collect",
+        choices=["drop", "keep_original", "error", "collect", "drop_and_collect"],
+        help="What to do when a Bangla word normalizes to None (default: drop_and_collect)",
     )
     p.add_argument(
         "--allow-english",
@@ -119,7 +119,7 @@ def process_file(input_path: Path, output_path: Path, none_policy: str,
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if none_policy == "collect":
+    if none_policy in ("collect", "drop_and_collect"):
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         failed_log_path = LOG_DIR / f"{input_path.stem}_norm_failures.jsonl"
         failed_log = open(failed_log_path, "w")
@@ -138,7 +138,7 @@ def process_file(input_path: Path, output_path: Path, none_policy: str,
 
                 result = normalize_text(doc["text"], none_policy, allow_english)
 
-                if none_policy == "collect" and isinstance(result, tuple):
+                if none_policy in ("collect", "drop_and_collect") and isinstance(result, tuple):
                     doc["text"], failed_tokens = result
                     if failed_tokens:
                         total_failed += len(failed_tokens)
@@ -222,7 +222,7 @@ def main():
     print(f"\nTotal: {total['normalized']:,} Bangla docs normalized, "
           f"{total['skipped']:,} non-Bangla skipped ({mb:.0f} MB)")
     if total_failed:
-        print(f"Failed tokens: {total_failed:,} (see saved/data/logs/)")
+        print(f"Failed tokens: {total_failed:,} (see saved/logs/)")
     print(f"Time: {elapsed:.1f}s")
     if args.dry_run:
         print("*** DRY RUN — no output written ***")
