@@ -11,9 +11,8 @@ No language token injection — tokens are already in text from downloaders.
 No eval split — everything goes to train.
 
 Usage:
-  python scripts/pretokenizer.py
-  python scripts/pretokenizer.py --max-tokens 5_000_000_000
-  python scripts/pretokenizer.py --delete-cleaned
+  python scripts/pretokenize_and_pack.py
+  python scripts/pretokenize_and_pack.py --delete-cleaned
 """
 
 from __future__ import annotations
@@ -29,7 +28,6 @@ from tqdm import tqdm
 
 
 CLEANED_DIR = Path("saved/data/cleaned")
-RAW_DIR = Path("saved/data/raw")
 HF_TOKENIZER_DIR = Path("saved/tokenizer/hf")
 PRETOKENIZED_DIR = Path("saved/data/pretokenized")
 
@@ -42,26 +40,17 @@ SOURCE_CONFIGS = {
         "inputs": [
             CLEANED_DIR / "bangla.jsonl",
         ],
-        "fallback_inputs": [
-            RAW_DIR / "titullm.jsonl",
-            RAW_DIR / "wiki_bangla.jsonl",
-        ],
         "output": PRETOKENIZED_DIR / "bangla" / "train",
     },
     "english": {
         "inputs": [
             CLEANED_DIR / "english.jsonl",
         ],
-        "fallback_inputs": [],
         "output": PRETOKENIZED_DIR / "english" / "train",
     },
     "nmt": {
         "inputs": [
             CLEANED_DIR / "nmt.jsonl",
-        ],
-        "fallback_inputs": [
-            RAW_DIR / "nllb.jsonl",
-            RAW_DIR / "banglanmt.jsonl",
         ],
         "output": PRETOKENIZED_DIR / "nmt" / "train",
     },
@@ -69,7 +58,6 @@ SOURCE_CONFIGS = {
         "inputs": [
             CLEANED_DIR / "sangraha.jsonl",
         ],
-        "fallback_inputs": [],
         "output": PRETOKENIZED_DIR / "sangraha" / "train",
     },
 }
@@ -98,7 +86,9 @@ def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path) -> int:
         return 0
     arr = np.array(token_ids[:usable], dtype=np.uint16).reshape(-1, SEQ_LEN)
     shard_path = output_dir / f"shard_{shard_idx:05d}.npy"
-    np.save(shard_path, arr)
+    tmp_path = shard_path.with_suffix(".npy.tmp")
+    np.save(tmp_path, arr)
+    tmp_path.replace(shard_path)
     return arr.shape[0]
 
 
@@ -108,18 +98,14 @@ def _count_lines(path: Path) -> int:
 
 
 def _resolve_inputs(config: dict) -> list[Path]:
-    """Return existing input files, preferring cleaned over raw."""
-    inputs = [p for p in config["inputs"] if p.exists()]
-    if not inputs:
-        inputs = [p for p in config.get("fallback_inputs", []) if p.exists()]
-    return inputs
+    """Return the configured input files."""
+    return [p for p in config["inputs"] if p.exists()]
 
 
 def pretokenize_source(
     source_type: str,
     config: dict,
     tokenizer,
-    max_tokens: int,
 ) -> tuple[int, int]:
     """Pretokenize one source type. Returns (tokens_written, docs_processed)."""
     output_dir = config["output"]
@@ -127,8 +113,9 @@ def pretokenize_source(
 
     inputs = _resolve_inputs(config)
     if not inputs:
-        print(f"[pretokenize] WARNING: No input files for {source_type}, skipping")
-        return 0, 0
+        print(f"[pretokenize] ERROR: input file(s) missing for {source_type}: "
+              f"{[str(p) for p in config['inputs']]}")
+        sys.exit(1)
 
     # Count total lines
     total_lines = sum(_count_lines(p) for p in inputs)
@@ -146,8 +133,6 @@ def pretokenize_source(
             with open(input_path, "r") as f:
                 for line in f:
                     bar.update(1)
-                    if max_tokens is not None and total_tokens >= max_tokens:
-                        break
 
                     try:
                         doc = json.loads(line)
@@ -173,9 +158,6 @@ def pretokenize_source(
                         save_shard(chunk, shard_idx, output_dir)
                         shard_idx += 1
 
-            if total_tokens >= max_tokens:
-                break
-
     # Save remaining buffer
     if buffer:
         remainder = len(buffer) % SEQ_LEN
@@ -189,8 +171,6 @@ def pretokenize_source(
 
 def main():
     parser = argparse.ArgumentParser(description="Pretokenize and pack into .npy shards.")
-    parser.add_argument("--max-tokens", type=int, default=None,
-                        help="Stop after this many tokens (default: no limit, tokenize everything).")
     parser.add_argument("--delete-cleaned", action="store_true",
                         help="Delete cleaned/ directory after pretokenization.")
     parser.add_argument("--source", choices=["bangla", "english", "nmt", "sangraha", "all"], default="all",
@@ -207,7 +187,7 @@ def main():
 
     for source_type in sources:
         config = SOURCE_CONFIGS[source_type]
-        tokens, docs = pretokenize_source(source_type, config, tokenizer, args.max_tokens)
+        tokens, docs = pretokenize_source(source_type, config, tokenizer)
         grand_tokens += tokens
         grand_docs += docs
 
