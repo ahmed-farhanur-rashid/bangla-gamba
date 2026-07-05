@@ -217,16 +217,20 @@ python -m src.tokenizer.wrapper \
   --spm-model saved/tokenizer/banglagamba_tokenizer.model \
   --output-dir saved/tokenizer/hf \
   --test
+```
 
-# Fix tokenizer_class
-sed -i 's/"TokenizersBackend"/"PreTrainedTokenizerFast"/' \
-  saved/tokenizer/hf/tokenizer_config.json
+### Fix Tokenizer Config
 
-# Fix model_max_length
-sed -i 's/"model_max_length": [0-9]*/"model_max_length": 2048/' \
-  saved/tokenizer/hf/tokenizer_config.json
+Before pretokenizing, the HuggingFace tokenizer config must be patched. By default, the wrapper sets an incorrect class, an infinite max length, and lacks a padding side. To ensure compatibility with our training pipeline and autoregressive generation, we must set `tokenizer_class` to `PreTrainedTokenizerFast`, cap `model_max_length` at 2048, and define `padding_side` as `left`.
 
-# Evaluate
+Run the automated fix script:
+```bash
+./scripts/fix_tokenizer_config.sh
+```
+
+### Evaluate Tokenizer
+
+```bash
 python tests/evaluate_tokenizer.py
 ```
 

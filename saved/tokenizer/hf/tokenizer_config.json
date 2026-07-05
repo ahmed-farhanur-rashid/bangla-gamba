@@ -2,6 +2,7 @@
   "backend": "tokenizers",
   "bos_token": "<s>",
   "eos_token": "</s>",
+  "clean_up_tokenization_spaces": false,
   "extra_special_tokens": [
     "<|im_start|>",
     "<|im_end|>",
@@ -146,8 +147,9 @@
     "<|reserved_98|>",
     "<|reserved_99|>"
   ],
-  "model_max_length": 1000000000000000019884624838656,
+  "model_max_length": 2048,
   "pad_token": "<pad>",
-  "tokenizer_class": "TokenizersBackend",
+  "padding_side": "left",
+  "tokenizer_class": "PreTrainedTokenizerFast",
   "unk_token": "<unk>"
 }
