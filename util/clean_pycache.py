@@ -3,8 +3,8 @@ Delete all __pycache__ directories in the project.
 Ignores venvs, dotfiles, and any folder starting with '.'.
 
 Usage:
-  python scripts/util/clean_pycache.py
-  python scripts/util/clean_pycache.py --dry-run
+  python util/clean_pycache.py
+  python util/clean_pycache.py --dry-run
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ def main():
                         help="Show what would be deleted without deleting.")
     args = parser.parse_args()
 
-    root = Path(__file__).resolve().parent.parent.parent
+    root = Path(__file__).resolve().parent.parent
     removed = 0
     skipped = 0
 

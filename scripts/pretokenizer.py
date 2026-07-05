@@ -146,7 +146,7 @@ def pretokenize_source(
             with open(input_path, "r") as f:
                 for line in f:
                     bar.update(1)
-                    if total_tokens >= max_tokens:
+                    if max_tokens is not None and total_tokens >= max_tokens:
                         break
 
                     try:
@@ -170,7 +170,7 @@ def pretokenize_source(
                     while len(buffer) >= BATCH_TOKENS:
                         chunk = buffer[:BATCH_TOKENS]
                         buffer = buffer[BATCH_TOKENS:]
-                        rows = save_shard(chunk, shard_idx, output_dir)
+                        save_shard(chunk, shard_idx, output_dir)
                         shard_idx += 1
 
             if total_tokens >= max_tokens:
@@ -181,7 +181,7 @@ def pretokenize_source(
         remainder = len(buffer) % SEQ_LEN
         if remainder:
             print(f"  [pretokenize] Truncating final buffer: discarding {remainder} tokens")
-        rows = save_shard(buffer, shard_idx, output_dir)
+        save_shard(buffer, shard_idx, output_dir)
         shard_idx += 1
 
     return total_tokens, total_docs
@@ -189,8 +189,8 @@ def pretokenize_source(
 
 def main():
     parser = argparse.ArgumentParser(description="Pretokenize and pack into .npy shards.")
-    parser.add_argument("--max-tokens", type=int, default=10_000_000_000,
-                        help="Stop after this many tokens (default: 10B).")
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="Stop after this many tokens (default: no limit, tokenize everything).")
     parser.add_argument("--delete-cleaned", action="store_true",
                         help="Delete cleaned/ directory after pretokenization.")
     parser.add_argument("--source", choices=["bangla", "english", "nmt", "sangraha", "all"], default="all",
