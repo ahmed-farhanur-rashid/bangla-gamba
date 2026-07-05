@@ -11,9 +11,7 @@ Usage:
 
   # Directly from a JSONL corpus (extracts 'text' field automatically):
   python -m src.tokenizer.train_tokenizer \
-      --input saved/data/cleaned/corpus_deduped.jsonl --jsonl
-
-Reference: BanglaFM_Complete_Guide.md §2.3–2.4
+      --input saved/data/cleaned/corpus.jsonl --jsonl
 """
 
 from __future__ import annotations
