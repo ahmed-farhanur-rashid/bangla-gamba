@@ -1,0 +1,6 @@
+# Limitation: 
+
+## 1
+
+Incomplete coverage of rare non-target-language characters
+Despite training the tokenizer with character_coverage=1.0, a small number of rare Chinese characters (Han script, CJK Unified Ideographs) appearing as embedded glosses within otherwise-Bangla text (e.g., foreign place names or linguistic terms annotated in their original script) are not present in the tokenizer's vocabulary and are mapped to the <unk> token, which is not recoverable on decode. This was identified via round-trip verification: in a sample of 2,001 documents, 3 documents (0.15%) exhibited round-trip mismatches, all attributable to specific rare Han characters (歐, 蘆, 仄 — confirmed individually absent from the vocabulary) embedded in Bangla Wikipedia text discussing foreign terms or historical/linguistic topics. The majority of Han characters appearing in the same source documents (e.g., 洲, 麻, 裏) were correctly covered, indicating this is a frequency-tail gap rather than a systemic exclusion of the script. This limitation affects a small fraction of documents and does not impact the tokenizer's representation of Bangla or English, the corpus's target languages; we consider it an acceptable trade-off given the vocabulary budget (48,000 tokens) is allocated primarily to Bangla and English coverage.

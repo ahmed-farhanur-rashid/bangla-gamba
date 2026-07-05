@@ -23,7 +23,7 @@ from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 BANGLA_GAMBA_TOKENIZER = PROJECT_ROOT / "saved" / "tokenizer" / "hf"
 BANGLA_CORPUS  = PROJECT_ROOT / "saved" / "data" / "cleaned" / "bangla.jsonl"
 ENGLISH_CORPUS = PROJECT_ROOT / "saved" / "data" / "cleaned" / "english.jsonl"
@@ -179,7 +179,14 @@ def compute_metrics(tokenizer, texts: list[str]) -> dict:
         
         # Round trip accuracy (allow normal spacing differences)
         decoded = tokenizer.decode(ids, skip_special_tokens=True).strip()
-        if "".join(decoded.split()) != "".join(text.split()):
+        
+        # Strip any special tokens present in the original text before comparing,
+        # since skip_special_tokens=True removes them from `decoded` but not from `text`.
+        text_for_comparison = text
+        for special in getattr(tokenizer, "all_special_tokens", []):
+            text_for_comparison = text_for_comparison.replace(special, "")
+
+        if "".join(decoded.split()) != "".join(text_for_comparison.split()):
             round_trip_failures += 1
             
         # Fragmentation analysis

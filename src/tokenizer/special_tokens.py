@@ -152,7 +152,7 @@ assert NUM_SPECIAL_TOKENS == 146, (
 
 VOCAB_SIZE = 48_000                         # total vocabulary
 LEARNED_SUBWORDS = VOCAB_SIZE - NUM_SPECIAL_TOKENS   # 47,854
-CHARACTER_COVERAGE = 0.9999
+CHARACTER_COVERAGE = 1.0
 MODEL_TYPE = "unigram"                      # SentencePiece model type
 BYTE_FALLBACK = True
 

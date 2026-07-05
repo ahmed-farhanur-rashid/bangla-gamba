@@ -24,7 +24,7 @@ def create_hf_tokenizer(spm_model_path: str, output_dir: str | None = None):
         from tokenizers import Tokenizer, AddedToken
         from tokenizers.models import Unigram
         from tokenizers.pre_tokenizers import Metaspace
-        from tokenizers.decoders import Metaspace as MetaspaceDecoder
+        from tokenizers.decoders import Metaspace as MetaspaceDecoder, ByteFallback, Sequence
         from transformers import PreTrainedTokenizerFast
     except ImportError as e:
         sys.exit(f"Missing dependency: {e}\nRun: pip install sentencepiece tokenizers transformers")
@@ -40,9 +40,15 @@ def create_hf_tokenizer(spm_model_path: str, output_dir: str | None = None):
     vocab = [(sp.IdToPiece(i), sp.GetScore(i)) for i in range(sp.GetPieceSize())]
     print(f"  Extracted {len(vocab):,} pieces")
 
-    backend = Tokenizer(Unigram(vocab, unk_id=SP_UNK_ID))
+    backend = Tokenizer(Unigram(vocab, unk_id=SP_UNK_ID, byte_fallback=True))
     backend.pre_tokenizer = Metaspace(replacement="▁", prepend_scheme="first", split=False)
-    backend.decoder = MetaspaceDecoder(replacement="▁", prepend_scheme="first")
+    # ByteFallback() reassembles <0xXX> tokens back into raw bytes/UTF-8
+    # characters BEFORE Metaspace handles the ▁ word-boundary marker.
+    # Order matters: byte reassembly must happen first.
+    backend.decoder = Sequence([
+        ByteFallback(),
+        MetaspaceDecoder(replacement="▁", prepend_scheme="first"),
+    ])
     backend.add_special_tokens([
         AddedToken(tok, special=True, normalized=False)
         for tok in [PAD_TOKEN, UNK_TOKEN, BOS_TOKEN, EOS_TOKEN] + USER_DEFINED_SYMBOLS
