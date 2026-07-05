@@ -6,6 +6,7 @@ Output directories:
   saved/data/pretokenized/bangla/train/
   saved/data/pretokenized/english/train/
   saved/data/pretokenized/nmt/train/
+  saved/data/pretokenized/sangraha/train/
 
 No language token injection — tokens are already in text from downloaders.
 No eval split — everything goes to train.
