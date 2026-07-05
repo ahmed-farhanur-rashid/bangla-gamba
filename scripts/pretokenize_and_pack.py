@@ -87,7 +87,7 @@ def save_shard(token_ids: list[int], shard_idx: int, output_dir: Path) -> int:
         return 0
     arr = np.array(token_ids[:usable], dtype=np.uint16).reshape(-1, SEQ_LEN)
     shard_path = output_dir / f"shard_{shard_idx:05d}.npy"
-    tmp_path = shard_path.with_suffix(".npy.tmp")
+    tmp_path = shard_path.with_suffix(".tmp.npy")
     np.save(tmp_path, arr)
     tmp_path.replace(shard_path)
     return arr.shape[0]
