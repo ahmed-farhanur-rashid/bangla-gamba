@@ -1,0 +1,65 @@
+generated_at: '2026-07-06T10:39:31.750749'
+format: npy
+files:
+  saved/data/pretokenized/english/train/shard_00000.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00001.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00002.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00003.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00004.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00005.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00006.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00007.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00008.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00009.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00010.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00011.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00012.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00013.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/english/train/shard_00014.npy:
+    total_tokens: 159631360
+    total_seqs: 77945
+    seq_len: 2048
+grand_total_tokens: 3026831360
+grand_total_seqs: 1477945

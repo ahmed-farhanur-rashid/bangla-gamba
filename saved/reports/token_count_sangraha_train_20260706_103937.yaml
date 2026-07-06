@@ -1,0 +1,137 @@
+generated_at: '2026-07-06T10:39:37.704604'
+format: npy
+files:
+  saved/data/pretokenized/sangraha/train/shard_00000.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00001.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00002.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00003.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00004.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00005.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00006.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00007.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00008.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00009.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00010.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00011.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00012.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00013.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00014.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00015.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00016.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00017.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00018.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00019.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00020.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00021.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00022.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00023.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00024.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00025.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00026.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00027.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00028.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00029.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00030.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00031.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/pretokenized/sangraha/train/shard_00032.npy:
+    total_tokens: 11843584
+    total_seqs: 5783
+    seq_len: 2048
+grand_total_tokens: 6565443584
+grand_total_seqs: 3205783
