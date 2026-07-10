@@ -3,6 +3,10 @@ Metric logging utilities for BanglaGamba.
 
 Simple CSV-based logging for training metrics. Lightweight, no external
 dependencies (no wandb/tensorboard required, though can be added later).
+
+Resume-safe: appends to existing CSVs and continues elapsed_s from the
+wall_clock value passed by the Trainer (checkpoint-backed, survives
+arbitrary restarts).
 """
 
 import csv
@@ -13,67 +17,103 @@ from typing import Dict, Optional
 
 class MetricLogger:
     """
-    Logs training metrics to CSV and stdout.
+    Logs training metrics to CSV.
 
     Creates a CSV file with columns for step, tokens_seen, loss, lr,
-    gradient norms, etc.
+    gradient norms, etc. Safe to resume: appends to existing CSVs and
+    continues elapsed_s from the checkpoint-backed wall clock.
     """
 
     def __init__(self, log_dir: str, run_name: str = "default"):
         self.log_dir = Path(log_dir) / run_name
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.csv_path = self.log_dir / "metrics.csv"
-        self.start_time = time.time()
         self._csv_initialized = False
+        self._fieldnames: list = []
+
+        # Wall-clock tracking: the Trainer sets _resumed_wall_clock from
+        # the checkpoint. This is strictly better than reading the CSV
+        # because it survives CSV truncation/corruption.
+        self._resumed_wall_clock = 0.0
+        self._session_start = time.time()
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _elapsed(self) -> float:
+        """Wall-clock seconds since first run began (survives restarts).
+
+        Uses checkpoint-backed _resumed_wall_clock + current session time.
+        """
+        return round(self._resumed_wall_clock + (time.time() - self._session_start), 1)
 
     def _init_csv(self, fieldnames: list):
-        """Initialize CSV file with headers."""
-        with open(self.csv_path, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
+        """
+        Prepare CSV for appending.
+
+        If the file already exists and has a header, read fieldnames from
+        it so we stay schema-compatible. If it is absent or empty, write
+        the header now.
+        """
+        file_exists = self.csv_path.exists() and self.csv_path.stat().st_size > 0
+        if file_exists:
+            # Read existing header so we don't duplicate or misorder columns.
+            with open(self.csv_path, newline="") as f:
+                reader = csv.DictReader(f)
+                existing = reader.fieldnames or []
+            # Merge: keep existing order, append any new columns at the end.
+            merged = list(existing)
+            for col in fieldnames:
+                if col not in merged:
+                    merged.append(col)
+            self._fieldnames = merged
+        else:
+            self._fieldnames = fieldnames
+            with open(self.csv_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=self._fieldnames)
+                writer.writeheader()
         self._csv_initialized = True
-        self._fieldnames = fieldnames
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def log_eval(self, metrics: Dict[str, float]):
+        """Log evaluation metrics to a separate CSV (safe to resume)."""
+        eval_csv = self.log_dir / "eval_metrics.csv"
+        metrics["elapsed_s"] = self._elapsed()
+
+        file_exists = eval_csv.exists() and eval_csv.stat().st_size > 0
+        with open(eval_csv, "a", newline="") as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=list(metrics.keys()),
+                extrasaction="ignore",
+            )
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(metrics)
 
     def log(self, metrics: Dict[str, float]):
         """
-        Log one row of metrics.
+        Append one row of metrics to the CSV.
 
         Args:
-            metrics: Dict of metric name → value.
+            metrics: Dict of metric name → value. None values are written
+                     as empty cells (not 0) so downstream tools can
+                     distinguish "not measured" from "zero".
         """
-        # Add elapsed time
-        metrics["elapsed_s"] = round(time.time() - self.start_time, 1)
+        metrics["elapsed_s"] = self._elapsed()
 
         if not self._csv_initialized:
             self._init_csv(list(metrics.keys()))
 
         with open(self.csv_path, "a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=self._fieldnames, extrasaction="ignore")
+            writer = csv.DictWriter(
+                f,
+                fieldnames=self._fieldnames,
+                extrasaction="ignore",
+                restval="",          # missing keys → empty cell, not error
+            )
             writer.writerow(metrics)
-
-    def log_stdout(
-        self,
-        step: int,
-        total_steps: int,
-        loss: float,
-        lr_muon: float,
-        lr_adamw: float,
-        tokens_per_sec: Optional[float] = None,
-        grad_norm_muon: Optional[float] = None,
-        grad_norm_adamw: Optional[float] = None,
-    ):
-        """Print a formatted training progress line."""
-        parts = [
-            f"step {step:>6d}/{total_steps}",
-            f"loss={loss:.4f}",
-            f"lr_muon={lr_muon:.2e}",
-            f"lr_adamw={lr_adamw:.2e}",
-        ]
-        if tokens_per_sec is not None:
-            parts.append(f"tok/s={tokens_per_sec:.0f}")
-        if grad_norm_muon is not None:
-            parts.append(f"gnorm_muon={grad_norm_muon:.3f}")
-        if grad_norm_adamw is not None:
-            parts.append(f"gnorm_adamw={grad_norm_adamw:.3f}")
-
-        print(f"[Train] {' | '.join(parts)}")

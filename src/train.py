@@ -31,7 +31,8 @@ import torch
 from src.model.config import BanglaGambaConfig
 from src.model.model import BanglaGambaModel
 from src.model.optim import build_optimizers, load_optimizer_config
-from src.data.collator import build_dataloader
+from functools import partial
+from src.data.collator import build_dataloader, build_dataset, make_epoch_loader
 from src.training.trainer import Trainer, TrainerConfig
 from src.training.scheduler import build_schedulers
 from src.utils.seed import set_seed
@@ -39,20 +40,20 @@ from src.utils.seed import set_seed
 
 def parse_args():
     parser = argparse.ArgumentParser(description="BanglaGamba Training")
-    parser.add_argument("--model", type=str, required=True,
+    parser.add_argument("--model", type=str, default="configs/banglagamba_12l.yaml",
                         help="Path to model config YAML")
-    parser.add_argument("--training", type=str, required=True,
+    parser.add_argument("--training", type=str, default="configs/default_training.yaml",
                         help="Path to training config YAML")
-    parser.add_argument("--optimizer", type=str, required=True,
+    parser.add_argument("--optimizer", type=str, default="configs/muon_adamw.yaml",
                         help="Path to optimizer config YAML")
-    parser.add_argument("--data", type=str, required=True,
+    parser.add_argument("--data", type=str, default="configs/default_data.yaml",
                         help="Path to data config YAML")
     parser.add_argument("--resume", action="store_true",
                         help="Resume from latest checkpoint")
     parser.add_argument("--resume-path", type=str, default=None,
                         help="Resume from a specific checkpoint path")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="Random seed (default: 42)")
+    parser.add_argument("--seed", type=int, default=1839,
+                        help="Random seed (default: 1839)")
     return parser.parse_args()
 
 
@@ -104,10 +105,12 @@ def main():
         print("[Init] Gradient checkpointing enabled")
 
     # ── torch.compile ─────────────────────────────────────────────────────
+    # NOTE: Mamba-3 uses custom Triton kernels that are incompatible with
+    # torch.compile. Leaving this gated by config but defaulting to False.
     if trainer_config.compile_model:
         try:
-            model = torch.compile(model, mode="reduce-overhead")
-            print("[Init] torch.compile enabled (reduce-overhead)")
+            model = torch.compile(model)
+            print("[Init] torch.compile enabled (default mode)")
         except Exception as e:
             print(f"[Init] torch.compile failed: {e} — continuing without compilation")
 
@@ -123,25 +126,59 @@ def main():
     num_workers = data_config.get("num_workers", 2)
     max_shards = data_config.get("max_shards", 0)
 
-    train_loader = build_dataloader(
-        npy_dir=train_npy_dir,
+    # Dataset (memory-mapped shards) is built once and reused across epochs.
+    # The actual shuffle order is produced per-epoch by make_epoch_loader
+    # below, seeded with (args.seed + epoch) — this preserves full random
+    # shuffling (a fresh, different permutation every epoch) while making
+    # each epoch's order exactly reproducible across process restarts, so
+    # resume can fast-forward to precisely where it left off with no
+    # duplicated or skipped sequences.
+    train_dataset = build_dataset(npy_dir=train_npy_dir, max_shards=max_shards)
+
+    train_loader_fn = partial(
+        make_epoch_loader,
+        train_dataset,
         batch_size=batch_size,
         num_workers=num_workers,
-        shuffle=True,
+        shuffle=True,  # CRITICAL: Must be True to mix Bangla, English, and NMT in every batch!
         pin_memory=True,
-        max_shards=max_shards,
+        base_seed=args.seed,
     )
+    train_loader = train_loader_fn(epoch=0)
 
+    # ── Eval loaders (auto-detect per-language subdirs) ───────────────────
     eval_loader = None
     if eval_npy_dir:
+        eval_path = Path(eval_npy_dir)
         try:
-            eval_loader = build_dataloader(
-                npy_dir=eval_npy_dir,
-                batch_size=batch_size,
-                num_workers=num_workers,
-                shuffle=False,
-                pin_memory=True,
-            )
+            subdirs = [d for d in eval_path.iterdir() if d.is_dir()]
+            if subdirs:
+                # Multi-split eval: each subdir becomes a separate eval loader
+                # e.g. eval/bng/ → "bng", eval/eng/ → "eng"
+                eval_loader = {}
+                for subdir in subdirs:
+                    if list(subdir.rglob("*.npy")):
+                        eval_loader[subdir.name] = build_dataloader(
+                            npy_dir=str(subdir),
+                            batch_size=batch_size,
+                            num_workers=num_workers,
+                            shuffle=False,
+                            pin_memory=True,
+                        )
+                        print(f"[Init] Eval split '{subdir.name}': "
+                              f"{len(eval_loader[subdir.name].dataset):,} sequences")
+                if not eval_loader:
+                    eval_loader = None
+            else:
+                # Single eval directory (no subdirs)
+                eval_loader = build_dataloader(
+                    npy_dir=eval_npy_dir,
+                    batch_size=batch_size,
+                    num_workers=num_workers,
+                    shuffle=False,
+                    pin_memory=True,
+                )
+                print(f"[Init] Eval: {len(eval_loader.dataset):,} sequences")
         except FileNotFoundError:
             print(f"[Init] Eval dir not found: {eval_npy_dir} — skipping eval")
 
@@ -175,7 +212,9 @@ def main():
         config=trainer_config,
         model_config=model_config,
         device=device,
+        train_loader_fn=train_loader_fn,
     )
+    trainer.data_seed = args.seed
 
     # ── Resume if requested ───────────────────────────────────────────────
     if args.resume or args.resume_path:
@@ -187,6 +226,7 @@ def main():
     print(f"  Model: {param_counts['total']/1e6:.1f}M params")
     print(f"  Device: {device}")
     print(f"  Steps: {trainer.total_steps:,}")
+    print(f"  Seed: {args.seed}")
     print(f"{'='*70}\n")
 
     trainer.train()

@@ -1,32 +1,33 @@
 # Training config for BanglaGamba
-# Spec: BanglaFM_Model_Implementation_Spec.md §4-5
 
 # LR schedule: warmup + cosine decay
-warmup_ratio: 0.015            # 1.5% of total steps
-min_lr_ratio: 0.1              # decay to 10% of peak
+warmup_ratio: 0.015 # 1.5% of total steps
+min_lr_ratio: 0.1 # decay to 10% of peak
 
 # Gradient
 max_grad_norm: 1.0
-accumulation_steps: 64         # effective batch ≈ 64 * batch_size * 2048 tokens
+accumulation_steps: 64 # effective batch ≈ 64 * batch_size * 2048 tokens
 
 # Stability
-z_loss_weight: 1.0e-4          # spec §6.2
+z_loss_weight: 1.0e-4
 
 # Memory optimizations
-gradient_checkpointing: true   # spec §5.4
-compile_model: true            # spec §5.5 (torch.compile)
+gradient_checkpointing: true
+compile_model: false # Mamba-3 Triton kernels incompatible with torch.compile
 
-# Checkpointing (spec §7)
-checkpoint_dir: checkpoints
-checkpoint_every: 2000
+# Checkpointing
+checkpoint_dir: saved/checkpoints
+checkpoint_every: 125
 keep_checkpoints: 3
+model_dir: saved/model # Stripped model export (weights + config only)
 
 # Logging
-log_dir: logs
+log_dir: saved/logs
 run_name: default
 log_every: 10
-eval_every: 500
-grad_norm_monitor_steps: 300   # spec §4.7
+eval_every: 125
+eval_batches: 50 # Max batches per eval split mid-training (0 = all)
+grad_norm_monitor_steps: 300
 
 # Pad token
 pad_token_id: 0

@@ -4,7 +4,11 @@ Checkpoint management for BanglaGamba.
 Handles save/load of dual optimizer states (Muon + AdamW),
 both schedulers, RNG state, and training progress.
 
-Spec §7: Keep last N + best-by-validation-perplexity.
+Features:
+  - Atomic saves (write to .tmp then os.replace) — no corrupted files on power loss
+  - Epoch + batches_consumed tracking for deterministic resume
+  - Wall-clock persistence for accurate elapsed time across restarts
+  - Model export (weights + config only, no optimizer bloat)
 """
 
 import os
@@ -12,6 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 import torch
+import yaml
 
 
 def save_checkpoint(
@@ -26,6 +31,10 @@ def save_checkpoint(
     train_loss: float,
     val_perplexity: Optional[float] = None,
     config: Optional[dict] = None,
+    epoch: int = 0,
+    batches_consumed_this_epoch: int = 0,
+    data_seed: Optional[int] = None,
+    wall_clock: float = 0.0,
 ):
     """
     Save a complete training checkpoint with dual optimizer states.
@@ -42,6 +51,19 @@ def save_checkpoint(
         train_loss: Current training loss.
         val_perplexity: Validation perplexity (if computed).
         config: Model config dict (for reproducibility).
+        epoch: Current epoch index (0-based). Required to rebuild the
+            correct epoch-seeded shuffle order on resume.
+        batches_consumed_this_epoch: Micro-batches consumed so far in
+            `epoch`, at the current shuffle order. Required for exact
+            fast-forward on resume (no duplication, no skipped data).
+        data_seed: The base_seed used to build the training dataloader's
+            per-epoch sampler (base_seed + epoch). Saved for sanity
+            verification on resume — if the loader is rebuilt with a
+            different base seed, fast-forwarding would silently replay
+            the wrong permutation.
+        wall_clock: Cumulative wall-clock seconds of actual training
+            across all sessions. Used to restore accurate elapsed time
+            on resume.
     """
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -58,10 +80,17 @@ def save_checkpoint(
         "config": config,
         "rng_state": torch.get_rng_state(),
         "cuda_rng_state": torch.cuda.get_rng_state() if torch.cuda.is_available() else None,
+        "epoch": epoch,
+        "batches_consumed_this_epoch": batches_consumed_this_epoch,
+        "data_seed": data_seed,
+        "wall_clock": wall_clock,
     }
 
-    torch.save(checkpoint, path)
-    print(f"[Checkpoint] Saved step {step} → {path}")
+    # Atomic save: write to tmp then rename — prevents corrupted
+    # checkpoints if power is lost mid-write.
+    tmp_path = path + ".tmp"
+    torch.save(checkpoint, tmp_path)
+    os.replace(tmp_path, path)
 
 
 def load_checkpoint(
@@ -76,7 +105,7 @@ def load_checkpoint(
     """
     Load a checkpoint and restore all state.
 
-    Returns the checkpoint dict (for step, tokens_seen, etc.).
+    Returns the checkpoint dict (for step, tokens_seen, epoch, wall_clock, etc.).
     """
     checkpoint = torch.load(path, map_location=device, weights_only=False)
 
@@ -87,11 +116,13 @@ def load_checkpoint(
     adamw_scheduler.load_state_dict(checkpoint["adamw_sched_state_dict"])
 
     # Restore RNG state
-    torch.set_rng_state(checkpoint["rng_state"])
+    torch.set_rng_state(checkpoint["rng_state"].cpu())
     if checkpoint.get("cuda_rng_state") is not None and torch.cuda.is_available():
-        torch.cuda.set_rng_state(checkpoint["cuda_rng_state"])
+        torch.cuda.set_rng_state(checkpoint["cuda_rng_state"].cpu())
 
-    print(f"[Checkpoint] Resumed from step {checkpoint['step']} ← {path}")
+    print(f"[Checkpoint] Resumed from step {checkpoint['step']} "
+          f"(epoch {checkpoint.get('epoch', 0)}, "
+          f"batch {checkpoint.get('batches_consumed_this_epoch', 0)} in epoch) ← {path}")
     return checkpoint
 
 
@@ -125,4 +156,42 @@ def manage_checkpoints(
     for ckpt in ckpts:
         if ckpt.resolve() not in protected:
             ckpt.unlink()
-            print(f"[Checkpoint] Deleted old checkpoint: {ckpt.name}")
+
+
+def export_model(
+    model: torch.nn.Module,
+    config: dict,
+    model_dir: str,
+    run_name: str = "default",
+) -> str:
+    """
+    Export the final trained model (weights + config only, no optimizer state).
+
+    This produces a stripped-down version suitable for HuggingFace upload:
+      - model.pt: just the state_dict (no optimizer, scheduler, RNG state)
+      - config.yaml: model architecture config for reconstruction
+
+    Args:
+        model: The trained model.
+        config: Model config dict.
+        model_dir: Base directory for model exports.
+        run_name: Run identifier (subdirectory name).
+
+    Returns:
+        Path to the export directory.
+    """
+    export_dir = Path(model_dir) / run_name
+    export_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save model weights only
+    model_path = export_dir / "model.pt"
+    torch.save(model.state_dict(), str(model_path))
+
+    # Save config for reconstruction
+    config_path = export_dir / "config.yaml"
+    with open(config_path, "w") as f:
+        yaml.dump(config, f, default_flow_style=False)
+
+    print(f"[Export] Model exported to {export_dir}/ "
+          f"(model.pt + config.yaml, no optimizer state)")
+    return str(export_dir)
