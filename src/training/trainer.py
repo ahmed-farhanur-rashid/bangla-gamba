@@ -390,25 +390,18 @@ class Trainer:
         self._last_loss = 0.0
 
         # Build (or rebuild) the loader for the current epoch with its
-        # deterministic, epoch-seeded shuffle order, then fast-forward
-        # WITHIN that epoch only, by the exact number of micro-batches
-        # already consumed. Because the shuffle order for (base_seed,
-        # epoch) is reproducible, this lands exactly on the next unseen
-        # batch: no duplicates, no skipped/unseen sequences.
+        # deterministic, epoch-seeded shuffle order. The EpochSampler
+        # generates the same permutation as before and starts yielding
+        # from the correct position — no I/O fast-forward needed.
         if self.train_loader_fn is not None:
-            self.train_loader = self.train_loader_fn(self.epoch)
+            skip = self.batches_consumed_this_epoch
+            self.train_loader = self.train_loader_fn(self.epoch, skip_batches=skip)
+            if skip > 0:
+                print(f"[Trainer] Resuming epoch {self.epoch}: sampler skipping "
+                      f"{skip} batches ({skip * (self.model_config.seq_len if self.model_config else 2048):,} "
+                      f"tokens) — instant, zero I/O.")
 
         data_iter = iter(self.train_loader)
-        batches_to_skip = self.batches_consumed_this_epoch
-
-        if batches_to_skip > 0:
-            print(f"[Trainer] Resuming epoch {self.epoch}: fast-forwarding "
-                  f"dataloader by {batches_to_skip} batches (exact replay of "
-                  f"this epoch's shuffle order)...")
-            for _ in range(batches_to_skip):
-                next(data_iter)  # must not wrap here — wrapping would mean
-                                  # we mis-tracked batches_consumed_this_epoch
-            print("[Trainer] Dataloader fast-forward complete.")
 
         session_start = time.time()
         resume_step = self.global_step
