@@ -5,7 +5,7 @@ Measures tok/s throughput with synthetic data to isolate model speed
 from data pipeline. Run this BEFORE and AFTER each optimization.
 
 Usage:
-    python scripts/benchmark_speed.py [--batch-size N] [--steps N] [--grad-ckpt] [--compile-ffn]
+    python tests/benchmark_speed.py [--batch-size N] [--steps N] [--grad-ckpt] [--compile-ffn]
 """
 
 import argparse

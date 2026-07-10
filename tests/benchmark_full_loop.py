@@ -5,7 +5,7 @@ Tests whether the real training loop fits in 12GB VRAM with all
 components: model, optimizer state, gradient accumulation, z-loss.
 
 Usage:
-    python scripts/benchmark_full_loop.py [--optimizer-steps N] [--grad-ckpt]
+    python tests/benchmark_full_loop.py [--optimizer-steps N] [--grad-ckpt]
 """
 
 import sys
