@@ -171,15 +171,20 @@ class BanglaGambaModel(nn.Module):
     def forward(
         self,
         input_ids: torch.Tensor,                # (B, T) int64
+        return_hidden: bool = False,            # If True, return pre-lm_head hidden states
     ) -> torch.Tensor:
         """
         Forward pass.
 
         Args:
             input_ids: (B, T) token IDs.
+            return_hidden: If True, return normalized hidden states before lm_head.
+                Used with LigerFusedLinearCrossEntropyLoss which fuses the
+                lm_head projection into the loss computation.
 
         Returns:
-            logits: (B, T, vocab_size) raw logits (no softmax).
+            If return_hidden=False: logits (B, T, vocab_size)
+            If return_hidden=True: hidden_states (B, T, d_model) after final_norm
         """
         B, T = input_ids.shape
         device = input_ids.device
@@ -194,10 +199,14 @@ class BanglaGambaModel(nn.Module):
         for layer in self.layers:
             x = layer(x, positions=positions, rope=self.rope)
 
-        # Final norm + LM head
+        # Final norm
         x = self.final_norm(x)
-        logits = self.lm_head(x)
 
+        if return_hidden:
+            return x  # (B, T, d_model) — for fused linear cross-entropy
+
+        # LM head
+        logits = self.lm_head(x)
         return logits
 
     def count_parameters(self) -> dict:

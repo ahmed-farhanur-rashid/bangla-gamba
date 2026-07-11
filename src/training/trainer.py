@@ -36,6 +36,13 @@ from src.training.checkpoint import (
 from src.utils.logging import MetricLogger
 
 
+try:
+    from liger_kernel.transformers import LigerFusedLinearCrossEntropyLoss
+    LIGER_AVAILABLE = True
+except ImportError:
+    LIGER_AVAILABLE = False
+
+
 def _format_time(seconds: float) -> str:
     """Format seconds into human-readable time string."""
     if seconds < 0:
@@ -199,6 +206,16 @@ class Trainer:
         # State
         self.global_step = 0
         self.tokens_seen = 0
+
+        # Fused linear cross-entropy (liger-kernel) — fuses lm_head + CE + z-loss
+        # into a single kernel that never materializes the full logits tensor.
+        self._fused_ce = None
+        if LIGER_AVAILABLE:
+            self._fused_ce = LigerFusedLinearCrossEntropyLoss(
+                ignore_index=self.config.pad_token_id,
+                lse_square_scale=self.config.z_loss_weight,
+            )
+            print("[Trainer] Using LigerFusedLinearCrossEntropyLoss (fused lm_head + CE + z-loss)")
 
         # Wall-clock tracking (checkpoint-backed, survives restarts)
         self._resumed_wall_clock = 0.0
@@ -461,9 +478,22 @@ class Trainer:
 
             # Forward + backward
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = self.model(input_ids)
-                loss, ce_val, z_val = self.compute_loss(logits, targets)
-                loss = loss / accum  # scale for accumulation
+                if self._fused_ce is not None:
+                    # Fused path: model returns hidden states, loss fuses lm_head + CE + z-loss
+                    hidden = self.model(input_ids, return_hidden=True)
+                    # LigerFusedLinearCrossEntropyLoss takes (weight, hidden, targets)
+                    loss = self._fused_ce(
+                        self.model.lm_head.weight,
+                        hidden.reshape(-1, hidden.shape[-1]),
+                        targets.reshape(-1),
+                    )
+                    ce_val = loss.item()
+                    z_val = 0.0  # z-loss is computed internally by liger
+                    loss = loss / accum
+                else:
+                    logits = self.model(input_ids)
+                    loss, ce_val, z_val = self.compute_loss(logits, targets)
+                    loss = loss / accum  # scale for accumulation
 
             loss.backward()
 

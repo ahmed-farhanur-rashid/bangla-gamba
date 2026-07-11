@@ -23,6 +23,11 @@ from src.model.optim import build_optimizers, load_optimizer_config, build_param
 from src.training.scheduler import build_schedulers
 from src.utils.seed import set_seed
 
+try:
+    from liger_kernel.transformers import LigerFusedLinearCrossEntropyLoss
+    LIGER_AVAILABLE = True
+except ImportError:
+    LIGER_AVAILABLE = False
 
 def main():
     import argparse
@@ -86,6 +91,14 @@ def main():
     muon_optimizer.zero_grad(set_to_none=True)
     adamw_optimizer.zero_grad(set_to_none=True)
 
+    if LIGER_AVAILABLE:
+        fused_ce = LigerFusedLinearCrossEntropyLoss(
+            ignore_index=0,
+            lse_square_scale=z_loss_weight,
+        )
+    else:
+        fused_ce = None
+
     # Synthetic data
     dummy_ids = torch.randint(0, config.vocab_size, (args.batch_size, seq_len), device=device)
     pad_token_id = 0
@@ -109,8 +122,16 @@ def main():
         input_ids = dummy_ids[:, :-1]
         targets = dummy_ids[:, 1:]
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            logits = model(input_ids)
-            loss = F.cross_entropy(logits.view(-1, config.vocab_size), targets.reshape(-1))
+            if fused_ce is not None:
+                hidden = model(input_ids, return_hidden=True)
+                loss = fused_ce(
+                    model.lm_head.weight,
+                    hidden.reshape(-1, hidden.shape[-1]),
+                    targets.reshape(-1),
+                )
+            else:
+                logits = model(input_ids)
+                loss = F.cross_entropy(logits.view(-1, config.vocab_size), targets.reshape(-1))
         loss.backward()
         muon_optimizer.zero_grad(set_to_none=True)
         adamw_optimizer.zero_grad(set_to_none=True)
@@ -128,23 +149,31 @@ def main():
             targets = dummy_ids[:, 1:].contiguous()
 
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = model(input_ids)
+                if fused_ce is not None:
+                    hidden = model(input_ids, return_hidden=True)
+                    total_loss = fused_ce(
+                        model.lm_head.weight,
+                        hidden.reshape(-1, hidden.shape[-1]),
+                        targets.reshape(-1),
+                    ) / args.accum
+                else:
+                    logits = model(input_ids)
 
-                B, T, V = logits.shape
-                ce_loss = F.cross_entropy(
-                    logits.view(-1, V), targets.view(-1),
-                    ignore_index=pad_token_id,
-                )
-                z_chunk = 128
-                z_accum = 0.0
-                n_el = 0
-                for t0 in range(0, T, z_chunk):
-                    t1 = min(t0 + z_chunk, T)
-                    lse = torch.logsumexp(logits[:, t0:t1, :], dim=-1)
-                    z_accum = z_accum + lse.pow(2).sum()
-                    n_el += lse.numel()
-                z_loss = z_loss_weight * (z_accum / n_el)
-                total_loss = (ce_loss + z_loss) / args.accum
+                    B, T, V = logits.shape
+                    ce_loss = F.cross_entropy(
+                        logits.view(-1, V), targets.view(-1),
+                        ignore_index=pad_token_id,
+                    )
+                    z_chunk = 128
+                    z_accum = 0.0
+                    n_el = 0
+                    for t0 in range(0, T, z_chunk):
+                        t1 = min(t0 + z_chunk, T)
+                        lse = torch.logsumexp(logits[:, t0:t1, :], dim=-1)
+                        z_accum = z_accum + lse.pow(2).sum()
+                        n_el += lse.numel()
+                    z_loss = z_loss_weight * (z_accum / n_el)
+                    total_loss = (ce_loss + z_loss) / args.accum
 
             total_loss.backward()
 
