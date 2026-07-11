@@ -135,7 +135,15 @@ def main():
                     logits.view(-1, V), targets.view(-1),
                     ignore_index=pad_token_id,
                 )
-                z_loss = z_loss_weight * torch.logsumexp(logits, dim=-1).pow(2).mean()
+                z_chunk = 128
+                z_accum = 0.0
+                n_el = 0
+                for t0 in range(0, T, z_chunk):
+                    t1 = min(t0 + z_chunk, T)
+                    lse = torch.logsumexp(logits[:, t0:t1, :], dim=-1)
+                    z_accum = z_accum + lse.pow(2).sum()
+                    n_el += lse.numel()
+                z_loss = z_loss_weight * (z_accum / n_el)
                 total_loss = (ce_loss + z_loss) / args.accum
 
             total_loss.backward()

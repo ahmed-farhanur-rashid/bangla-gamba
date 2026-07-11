@@ -21,17 +21,19 @@ def _rotate_half(x: torch.Tensor) -> torch.Tensor:
 
 class RotaryEmbedding(nn.Module):
     """
-    Standard Rotary Position Embedding.
+    Standard Rotary Position Embedding with cached cos/sin.
 
-    Computes angles in float32 for numerical stability (standard practice
-    in LLaMA, Mistral, Gemma), then casts cos/sin to the model dtype.
+    Precomputes cos/sin tables at init in float32 for numerical stability
+    (standard practice in LLaMA, Mistral, Gemma). Forward just indexes
+    into the cache — no trig computation at runtime.
 
     Parameters
     ----------
     d_head : int
         Per-head dimension. Must be even.
     max_seq_len : int
-        Maximum sequence length (for sanity checks only; not a hard limit).
+        Maximum sequence length. cos/sin are precomputed for all positions
+        up to this length.
     base : float
         RoPE frequency base. Default 10000.0.
     """
@@ -47,6 +49,13 @@ class RotaryEmbedding(nn.Module):
         )
         self.register_buffer("inv_freq", inv_freq)  # (d_head // 2,)
 
+        # Precompute cos/sin for all positions up to max_seq_len
+        t = torch.arange(max_seq_len, dtype=torch.float32)
+        freqs = torch.outer(t, inv_freq)               # (T, d_head//2)
+        emb = torch.cat([freqs, freqs], dim=-1)         # (T, d_head)
+        self.register_buffer("cos_cached", emb.cos())   # (T, d_head)
+        self.register_buffer("sin_cached", emb.sin())   # (T, d_head)
+
     def forward(
         self,
         q: torch.Tensor,          # (B, T, H, d_head)
@@ -58,20 +67,14 @@ class RotaryEmbedding(nn.Module):
 
         Returns rotated (q, k) with the same shapes and dtype as inputs.
         """
+        T = positions.shape[1]
         dtype = q.dtype
 
-        # Compute angles in float32 for precision
-        pos_f = positions.float().unsqueeze(-1)             # (B, T, 1)
-        freqs = pos_f * self.inv_freq.float()               # (B, T, d_head//2)
+        # Index into precomputed cache — no trig at runtime
+        cos = self.cos_cached[:T].to(dtype=dtype).unsqueeze(0).unsqueeze(2)  # (1, T, 1, d_head)
+        sin = self.sin_cached[:T].to(dtype=dtype).unsqueeze(0).unsqueeze(2)  # (1, T, 1, d_head)
 
-        # Duplicate for the rotate_half trick
-        emb = torch.cat([freqs, freqs], dim=-1)             # (B, T, d_head)
-
-        # Cast to model dtype after computing cos/sin in float32
-        cos = emb.cos().to(dtype=dtype).unsqueeze(2)        # (B, T, 1, d_head)
-        sin = emb.sin().to(dtype=dtype).unsqueeze(2)        # (B, T, 1, d_head)
-
-        # Apply rotation — broadcasts over head dimension
+        # Apply rotation — broadcasts over batch and head dimensions
         q_rot = q * cos + _rotate_half(q) * sin             # (B, T, H,   d_head)
         k_rot = k * cos + _rotate_half(k) * sin             # (B, T, Hkv, d_head)
 

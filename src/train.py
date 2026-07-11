@@ -60,6 +60,9 @@ def parse_args():
 def main():
     args = parse_args()
 
+    # ── CUDA memory allocator config (must be set before any CUDA init) ───
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
     # ── Set seed ──────────────────────────────────────────────────────────
     set_seed(args.seed)
 
@@ -105,14 +108,28 @@ def main():
         print("[Init] Gradient checkpointing enabled")
 
     # ── torch.compile ─────────────────────────────────────────────────────
-    # NOTE: Mamba-3 uses custom Triton kernels that are incompatible with
-    # torch.compile. Leaving this gated by config but defaulting to False.
-    if trainer_config.compile_model:
+    # Full-model compile is incompatible with Mamba-3's Triton kernels.
+    # Per-submodule compile targets only FFN + GQA attention — the pure
+    # PyTorch ops that benefit from kernel fusion.
+    if trainer_config.compile_submodules and not trainer_config.compile_model:
+        compiled_ffn = 0
+        compiled_gqa = 0
+        for layer in model.layers:
+            layer.ffn = torch.compile(layer.ffn)
+            compiled_ffn += 1
+            if layer.layer_type == "attn":
+                layer.mixer = torch.compile(layer.mixer)
+                compiled_gqa += 1
+        print(f"[Init] torch.compile(submodules): {compiled_ffn} FFNs + {compiled_gqa} GQAs compiled")
+    elif trainer_config.compile_model:
         try:
             model = torch.compile(model)
-            print("[Init] torch.compile enabled (default mode)")
+            print("[Init] torch.compile enabled (full model)")
         except Exception as e:
             print(f"[Init] torch.compile failed: {e} — continuing without compilation")
+
+    # TF32 global precision setting (supplements per-backend flags in Trainer)
+    torch.set_float32_matmul_precision("high")
 
     # ── Build optimizers ──────────────────────────────────────────────────
     print(f"\n[Init] Building optimizers...")

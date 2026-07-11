@@ -149,6 +149,7 @@ def make_epoch_loader(
         pin_memory=pin_memory,
         drop_last=True,  # Drop incomplete batches for gradient accumulation consistency
         worker_init_fn=ignore_sigint,
+        persistent_workers=num_workers > 0,  # Keep workers alive between iterations
     )
 
 

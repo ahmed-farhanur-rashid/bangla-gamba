@@ -12,8 +12,9 @@ accumulation_steps: 64 # effective batch ≈ 64 * batch_size * 2048 tokens
 z_loss_weight: 1.0e-4
 
 # Memory optimizations
-gradient_checkpointing: true
+gradient_checkpointing: false # Disabled: chunked z-loss + expandable_segments keep peak at ~8.6GB
 compile_model: false # Mamba-3 Triton kernels incompatible with torch.compile
+compile_submodules: true # Compile FFN + GQA individually (Mamba stays uncompiled)
 
 # Checkpointing
 checkpoint_dir: saved/checkpoints

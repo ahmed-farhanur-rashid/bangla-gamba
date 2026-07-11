@@ -99,6 +99,7 @@ class TrainerConfig:
     # Memory
     gradient_checkpointing: bool = True
     compile_model: bool = False  # Mamba-3 does not support torch.compile
+    compile_submodules: bool = True  # Compile FFN + GQA individually (Mamba stays uncompiled)
 
     # Checkpointing
     checkpoint_dir: str = "saved/checkpoints"
@@ -264,7 +265,17 @@ class Trainer:
         )
 
         # Z-loss: penalty on logit magnitude
-        z_loss = self.config.z_loss_weight * torch.logsumexp(logits, dim=-1).pow(2).mean()
+        # Computed in chunks along T to avoid materializing a full (B,T,V)
+        # float32 tensor in logsumexp (~750 MiB for B=2, T=2047, V=48000).
+        z_chunk = 128  # positions per chunk
+        z_accum = 0.0
+        n_elements = 0
+        for t0 in range(0, T, z_chunk):
+            t1 = min(t0 + z_chunk, T)
+            lse = torch.logsumexp(logits[:, t0:t1, :], dim=-1)  # (B, chunk)
+            z_accum = z_accum + lse.pow(2).sum()
+            n_elements += lse.numel()
+        z_loss = self.config.z_loss_weight * (z_accum / n_elements)
 
         total_loss = ce_loss + z_loss
 
@@ -276,7 +287,7 @@ class Trainer:
         adamw_norm = torch.nn.utils.clip_grad_norm_(self.adamw_params, float("inf")).item()
         return muon_norm, adamw_norm
 
-    @torch.no_grad()
+
     def evaluate(self) -> dict:
         """
         Compute validation perplexity.
@@ -295,19 +306,20 @@ class Trainer:
         def eval_single_loader(loader):
             total_loss = 0.0
             n_batches = 0
-            for i, batch in enumerate(loader):
-                if self.config.eval_batches > 0 and i >= self.config.eval_batches:
-                    break
-                input_ids = batch["input_ids"].to(self.device)
-                targets = input_ids[:, 1:].contiguous()
-                input_ids = input_ids[:, :-1].contiguous()
+            with torch.inference_mode():
+                for i, batch in enumerate(loader):
+                    if self.config.eval_batches > 0 and i >= self.config.eval_batches:
+                        break
+                    input_ids = batch["input_ids"].to(self.device, non_blocking=True)
+                    targets = input_ids[:, 1:].contiguous()
+                    input_ids = input_ids[:, :-1].contiguous()
 
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    logits = self.model(input_ids)
-                    loss, _, _ = self.compute_loss(logits, targets)
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        logits = self.model(input_ids)
+                        loss, _, _ = self.compute_loss(logits, targets)
 
-                total_loss += loss.item()
-                n_batches += 1
+                    total_loss += loss.item()
+                    n_batches += 1
 
             avg_loss = total_loss / max(n_batches, 1)
             return math.exp(min(avg_loss, 20))
@@ -443,7 +455,7 @@ class Trainer:
 
             self.batches_consumed_this_epoch += 1
 
-            input_ids = batch["input_ids"].to(self.device)
+            input_ids = batch["input_ids"].to(self.device, non_blocking=True)
             targets = input_ids[:, 1:].contiguous()
             input_ids = input_ids[:, :-1].contiguous()
 

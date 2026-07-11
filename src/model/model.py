@@ -63,7 +63,12 @@ class BanglaGambaBlock(nn.Module):
     ) -> torch.Tensor:
         # ── Mixer ────────────────────────────────────────────────────────
         h = self.norm1(x)
-        if self.layer_type == "attn":
+        if self.gradient_checkpointing and self.training and self.layer_type == "attn":
+            # Checkpoint GQA attention (saves Q/K/V/output activations).
+            # Mamba-3 stays eager — its Triton kernels may not support
+            # recomputation under torch.utils.checkpoint.
+            h = grad_checkpoint(self.mixer, h, positions, rope, use_reentrant=False)
+        elif self.layer_type == "attn":
             h = self.mixer(h, positions=positions, rope=rope)
         else:
             h = self.mixer(h)
