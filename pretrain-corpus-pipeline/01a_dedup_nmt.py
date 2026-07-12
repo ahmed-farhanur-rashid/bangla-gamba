@@ -5,7 +5,7 @@ Reads NLLB first (populates seen_bn), then BanglaNMT.
 Catches pairs with identical Bangla side across sources.
 
 Input:  saved/data/raw/nllb.jsonl + saved/data/raw/banglanmt.jsonl
-Output: saved/data/cleaned/nmt.jsonl
+Output: saved/data/deduped/nmt_deduped.jsonl
 
 Usage:
   python pretrain-corpus-pipeline/01a_dedup_nmt.py
@@ -23,8 +23,8 @@ from pathlib import Path
 from tqdm import tqdm
 
 RAW_DIR = Path("saved/data/raw")
-CLEANED_DIR = Path("saved/data/cleaned")
-OUTPUT = CLEANED_DIR / "nmt.jsonl"
+DEDUPED_DIR = Path("saved/data/deduped")
+OUTPUT = DEDUPED_DIR / "nmt_deduped.jsonl"
 
 NLLB_PATH = RAW_DIR / "nllb.jsonl"
 BANGLANMT_PATH = RAW_DIR / "banglanmt.jsonl"
@@ -42,7 +42,7 @@ def main():
                         help="Delete NMT raw files after dedup.")
     args = parser.parse_args()
 
-    CLEANED_DIR.mkdir(parents=True, exist_ok=True)
+    DEDUPED_DIR.mkdir(parents=True, exist_ok=True)
 
     # Check inputs exist
     sources = []
