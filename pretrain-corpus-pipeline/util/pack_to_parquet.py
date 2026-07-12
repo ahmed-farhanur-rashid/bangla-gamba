@@ -13,7 +13,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
-def pack_to_parquet(input_dir: str, output_dir: str, chunk_size: int = 250_000):
+def pack_to_parquet(input_dir: str, output_dir: str, chunk_size: int = 250_000, selected_files: list[str] = None):
     in_path = Path(input_dir)
     out_path = Path(output_dir)
     
@@ -24,6 +24,9 @@ def pack_to_parquet(input_dir: str, output_dir: str, chunk_size: int = 250_000):
     out_path.mkdir(parents=True, exist_ok=True)
     
     jsonl_files = list(in_path.glob("*.jsonl"))
+    if selected_files:
+        jsonl_files = [f for f in jsonl_files if f.name in selected_files]
+        
     if not jsonl_files:
         print(f"No .jsonl files found in {in_path}")
         return
@@ -62,6 +65,8 @@ if __name__ == "__main__":
                         help="Directory to save the .parquet shards")
     parser.add_argument("--chunk-size", type=int, default=250_000,
                         help="Number of rows per parquet shard (default: 250,000)")
+    parser.add_argument("--files", nargs="+", default=None,
+                        help="Specific .jsonl files to convert (e.g. nmt.jsonl bangla.jsonl). If empty, converts all.")
     
     args = parser.parse_args()
-    pack_to_parquet(args.input_dir, args.output_dir, args.chunk_size)
+    pack_to_parquet(args.input_dir, args.output_dir, args.chunk_size, args.files)
