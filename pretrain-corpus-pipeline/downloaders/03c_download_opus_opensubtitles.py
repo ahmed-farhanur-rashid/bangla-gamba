@@ -38,25 +38,32 @@ TARGET_DOCS = 50000
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-docs", type=int, default=TARGET_DOCS,
-                        help="Number of pairs to download (default: 50000).")
+    parser.add_argument("--max-docs", type=int, default=None,
+                        help="Number of pairs to download (default: all).")
     args = parser.parse_args()
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
     existing = count_lines(OUTPUT)
     existing_pairs = existing // 2
-    if existing_pairs >= args.max_docs:
+    if args.max_docs and existing_pairs >= args.max_docs:
         print(f"  \u21b7 {SOURCE} already complete ({existing_pairs:,} pairs), skipping")
         return
 
     print(f"[{SOURCE}] Loading opus100 bn-en dataset from HF Hub...")
-    ds = load_dataset("opus100", "bn-en", split="train", streaming=True)
+    ds = load_dataset("opus100", "bn-en", split="train")
+    
+    total_available = len(ds)
+    target_docs = args.max_docs if args.max_docs is not None else total_available
+
+    if existing_pairs >= target_docs:
+        print(f"  \u21b7 {SOURCE} already complete ({existing_pairs:,} pairs), skipping")
+        return
 
     written = existing_pairs
     kept = dropped = 0
 
-    bar = tqdm(desc="OPUS Subs       ", total=args.max_docs, unit="pairs")
+    bar = tqdm(desc="OPUS Subs       ", total=target_docs, unit="pairs")
     if written > 0:
         bar.update(written)
 
@@ -66,7 +73,7 @@ def main():
             if skip > 0:
                 skip -= 1
                 continue
-            if written >= args.max_docs:
+            if written >= target_docs:
                 break
             
             translation = row.get("translation", {})
@@ -97,10 +104,6 @@ def main():
     size_gb = OUTPUT.stat().st_size / (1024 ** 3)
     count = count_lines(OUTPUT)
     print(f"  \u2713 {SOURCE} \u2192 {OUTPUT}  ({count:,} lines, {size_gb:.4f} GB)")
-
-    # Avoid PyArrow/datasets PyGILState_Release crash on exit
-    import os
-    os._exit(0)
 
 if __name__ == "__main__":
     main()

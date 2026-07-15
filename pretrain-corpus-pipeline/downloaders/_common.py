@@ -64,7 +64,7 @@ def has_min_words(text: str, min_words: int = 20) -> bool:
 
 def length_ok(bn: str, en: str) -> bool:
     b, e = wc(bn), wc(en)
-    return 3 <= b <= 150 and 3 <= e <= 150
+    return 3 <= b and 3 <= e
 
 
 def ratio_ok(bn: str, en: str) -> bool:

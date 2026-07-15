@@ -14,6 +14,7 @@ No eval split — everything goes to train.
 Usage:
   python scripts/pretokenize_and_pack.py
   python scripts/pretokenize_and_pack.py --delete-cleaned
+  python scripts/pretokenize_and_pack.py --source opus_nmt
 """
 
 from __future__ import annotations

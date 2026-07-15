@@ -40,15 +40,15 @@ URL = "https://object.pouta.csc.fi/OPUS-Tatoeba/v2023-04-12/moses/bn-en.txt.zip"
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-docs", type=int, default=TARGET_DOCS,
-                        help="Number of pairs to download (default: 20000).")
+    parser.add_argument("--max-docs", type=int, default=None,
+                        help="Number of pairs to download (default: all).")
     args = parser.parse_args()
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
     existing = count_lines(OUTPUT)
     existing_pairs = existing // 2
-    if existing_pairs >= args.max_docs:
+    if args.max_docs and existing_pairs >= args.max_docs:
         print(f"  \u21b7 {SOURCE} already complete ({existing_pairs:,} pairs), skipping")
         return
 
@@ -64,12 +64,18 @@ def main():
         en_data = zf.read("Tatoeba.bn-en.en").decode("utf-8").splitlines()
 
     total_available = len(bn_data)
+    target_docs = args.max_docs if args.max_docs is not None else total_available
+
     print(f"[{SOURCE}] Found {total_available:,} pairs.")
+
+    if existing_pairs >= target_docs:
+        print(f"  \u21b7 {SOURCE} already complete ({existing_pairs:,} pairs), skipping")
+        return
 
     written = existing_pairs
     kept = dropped = 0
 
-    bar = tqdm(desc="OPUS Tatoeba    ", total=min(args.max_docs, total_available), unit="pairs")
+    bar = tqdm(desc="OPUS Tatoeba    ", total=target_docs, unit="pairs")
     if written > 0:
         bar.update(written)
 
@@ -79,7 +85,7 @@ def main():
             if skip > 0:
                 skip -= 1
                 continue
-            if written >= args.max_docs:
+            if written >= target_docs:
                 break
             
             bn_text = normalize_text(bn_raw)
