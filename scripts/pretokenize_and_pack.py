@@ -55,6 +55,12 @@ SOURCE_CONFIGS = {
         ],
         "output": PRETOKENIZED_DIR / "nmt" / "train",
     },
+    "opus_nmt": {
+        "inputs": [
+            CLEANED_DIR / "opus_nmt.jsonl",
+        ],
+        "output": PRETOKENIZED_DIR / "opus_nmt" / "train",
+    },
     "sangraha": {
         "inputs": [
             CLEANED_DIR / "sangraha.jsonl",
@@ -174,7 +180,7 @@ def main():
     parser = argparse.ArgumentParser(description="Pretokenize and pack into .npy shards.")
     parser.add_argument("--delete-cleaned", action="store_true",
                         help="Delete cleaned/ directory after pretokenization.")
-    parser.add_argument("--source", choices=["bangla", "english", "nmt", "sangraha", "all"], default="all",
+    parser.add_argument("--source", choices=["bangla", "english", "nmt", "opus_nmt", "sangraha", "all"], default="all",
                         help="Which source type to pretokenize (default: all).")
     args = parser.parse_args()
 
