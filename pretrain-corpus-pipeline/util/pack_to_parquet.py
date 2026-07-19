@@ -13,7 +13,7 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 
-def pack_to_parquet(input_dir: str, output_dir: str, chunk_size: int = 250_000, selected_files: list[str] = None):
+def pack_to_parquet(input_dir: str, output_dir: str, chunk_size: int = 250_000, row_group_size: int = 50_000, selected_files: list[str] = None):
     in_path = Path(input_dir)
     out_path = Path(output_dir)
     
@@ -49,7 +49,7 @@ def pack_to_parquet(input_dir: str, output_dir: str, chunk_size: int = 250_000, 
             
             # zstd compression gives fantastic text compression ratios
             # saving a lot of disk space for your 120GB drive.
-            chunk.to_parquet(out_file, engine='pyarrow', compression='zstd')
+            chunk.to_parquet(out_file, engine='pyarrow', compression='zstd', row_group_size=row_group_size)
             
             shard_count += 1
             total_rows += len(chunk)
@@ -65,8 +65,10 @@ if __name__ == "__main__":
                         help="Directory to save the .parquet shards")
     parser.add_argument("--chunk-size", type=int, default=250_000,
                         help="Number of rows per parquet shard (default: 250,000)")
+    parser.add_argument("--row-group-size", type=int, default=50_000,
+                        help="Number of rows per row-group inside the parquet (default: 50,000) to fix HF viewer size limits.")
     parser.add_argument("--files", nargs="+", default=None,
                         help="Specific .jsonl files to convert (e.g. nmt.jsonl bangla.jsonl). If empty, converts all.")
     
     args = parser.parse_args()
-    pack_to_parquet(args.input_dir, args.output_dir, args.chunk_size, args.files)
+    pack_to_parquet(args.input_dir, args.output_dir, args.chunk_size, args.row_group_size, args.files)
