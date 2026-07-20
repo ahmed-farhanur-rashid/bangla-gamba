@@ -5,7 +5,24 @@ Upload Parquets to Hugging Face and replace the old ones.
 This script uses `upload_folder` with `delete_patterns` to atomic swap data.
 
 Usage:
-  python pretrain-corpus-pipeline/util/upload_hf.py --local-dir temp/bangla_corpus --path-in-repo bangla_corpus
+  python pretrain-corpus-pipeline/util/upload_hf.py
+        --local-dir temp/bangla_corpus
+        --path-in-repo bangla_corpus
+
+  # 1. Update bangla_corpus
+  python pretrain-corpus-pipeline/util/upload_hf.py \
+    --local-dir /home/farhan/my-projects/bangla-gamba/temp/bangla_corpus \
+    --path-in-repo bangla_corpus
+
+  # 2. Update fineweb_edu
+  python pretrain-corpus-pipeline/util/upload_hf.py \
+    --local-dir /home/farhan/my-projects/bangla-gamba/temp/fineweb_edu \
+    --path-in-repo fineweb_edu
+
+  # 3. Update sangraha
+  python pretrain-corpus-pipeline/util/upload_hf.py \
+    --local-dir /home/farhan/my-projects/bangla-gamba/temp/sangraha \
+    --path-in-repo sangraha
 """
 
 import argparse
