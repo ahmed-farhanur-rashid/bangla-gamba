@@ -10,17 +10,17 @@ Usage:
         --path-in-repo bangla_corpus
 
   # 1. Update bangla_corpus
-  python pretrain-corpus-pipeline/util/upload_hf.py \
+  HF_HUB_ENABLE_HF_TRANSFER=1 python pretrain-corpus-pipeline/util/upload_hf.py \
     --local-dir /home/farhan/my-projects/bangla-gamba/temp/bangla_corpus \
     --path-in-repo bangla_corpus
 
   # 2. Update fineweb_edu
-  python pretrain-corpus-pipeline/util/upload_hf.py \
+  HF_HUB_ENABLE_HF_TRANSFER=1 python pretrain-corpus-pipeline/util/upload_hf.py \
     --local-dir /home/farhan/my-projects/bangla-gamba/temp/fineweb_edu \
     --path-in-repo fineweb_edu
 
   # 3. Update sangraha
-  python pretrain-corpus-pipeline/util/upload_hf.py \
+  HF_HUB_ENABLE_HF_TRANSFER=1 python pretrain-corpus-pipeline/util/upload_hf.py \
     --local-dir /home/farhan/my-projects/bangla-gamba/temp/sangraha \
     --path-in-repo sangraha
 """
