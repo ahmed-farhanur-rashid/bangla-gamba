@@ -11,7 +11,7 @@ Usage:
         --model_dir saved/model/default \
         --data_dir saved/data/eval \
         --report_dir saved/reports \
-        --batch_size 2
+        --batch_size 8
 """
 
 import argparse
@@ -33,7 +33,7 @@ from src.data.collator import build_dataloader
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate Perplexity and Loss on .npy shards for all subsets")
-    parser.add_argument("--model_dir", type=str, default="saved/model/default",
+    parser.add_argument("--model_dir", type=str, default="saved/model/banglagamba_12l",
                         help="Path to the exported model directory (containing config.yaml and model.pt)")
     parser.add_argument("--data_dir", type=str, default="saved/data/eval",
                         help="Path to the eval data directory (containing bng, eng, translation subdirs)")
@@ -48,10 +48,17 @@ def parse_args():
 def main():
     args = parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    model_dir = args.model_dir
+    if not os.path.exists(model_dir) and os.path.exists("saved/model"):
+        subdirs = [os.path.join("saved/model", d) for d in os.listdir("saved/model") if os.path.isdir(os.path.join("saved/model", d))]
+        if subdirs:
+            model_dir = subdirs[0]
+            print(f"[Init] Auto-detected model directory: {model_dir}")
     
     # ── 1. Load Model ──────────────────────────────────────────────────────────
-    config_path = os.path.join(args.model_dir, "config.yaml")
-    model_path = os.path.join(args.model_dir, "model.pt")
+    config_path = os.path.join(model_dir, "config.yaml")
+    model_path = os.path.join(model_dir, "model.pt")
     
     print(f"[Init] Loading config from {config_path}")
     model_config = BanglaGambaConfig.from_yaml(config_path)
@@ -61,7 +68,13 @@ def main():
     
     print(f"[Init] Loading weights from {model_path}...")
     state_dict = torch.load(model_path, map_location="cpu")
-    model.load_state_dict(state_dict)
+    cleaned_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith("rope."):
+            continue
+        cleaned_state_dict[k.replace("._orig_mod.", ".")] = v
+
+    model.load_state_dict(cleaned_state_dict, strict=False)
     model.eval()
     
     # ── 2. Discover Datasets ───────────────────────────────────────────────────

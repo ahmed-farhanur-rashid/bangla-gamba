@@ -66,6 +66,7 @@ checkpoints/
 model/
 preprocessed/
 pretokenized/
+hf_upload_staging/
 
 # ── Data Files (anywhere in tree) ────────────────────────────
 *.jsonl
