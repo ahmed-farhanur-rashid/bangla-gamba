@@ -85,6 +85,14 @@ class BanglaGambaTokenizer(PreTrainedTokenizerFast):
         text = self._normalize_input(text)
         return super().encode(text, **kwargs)
 
+    def decode(self, token_ids, **kwargs) -> str:
+        text = super().decode(token_ids, **kwargs)
+        return text.replace("▁", " ").replace(" ", " ")
+
+    def convert_tokens_to_string(self, tokens: List[str]) -> str:
+        text = super().convert_tokens_to_string(tokens)
+        return text.replace("▁", " ").replace(" ", " ")
+
     def __call__(self, text=None, text_pair=None, **kwargs):
         if text is not None:
             text = self._normalize_input(text)
