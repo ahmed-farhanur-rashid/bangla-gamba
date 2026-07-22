@@ -209,25 +209,113 @@ class GQAttention(nn.Module):
         return self.o_proj(attn_output)
 
 
-class MambaBlock(nn.Module):
-    """Wrapper around official Mamba-3 SSM module."""
+class PyTorchMamba3(nn.Module):
+    """Native PyTorch fallback for Mamba-3 SSM module (CPU / environments without mamba_ssm)."""
 
     def __init__(self, config: BanglaGambaConfig, layer_idx: int = 0):
         super().__init__()
-        if not _HAS_MAMBA:
-            raise ImportError(
-                "mamba_ssm is required to instantiate BanglaGamba with Mamba-3 blocks. "
-                "Please run `pip install mamba-ssm` or install mamba-ssm with CUDA support."
-            )
-        self.mamba = Mamba3(
-            d_model=config.d_model,
-            d_state=config.mamba_d_state,
-            expand=config.mamba_expand,
-            headdim=config.mamba_headdim,
-            ngroups=config.mamba_ngroups,
-            chunk_size=config.mamba_chunk_size,
-            layer_idx=layer_idx,
+        self.d_model = config.d_model
+        self.d_state = config.mamba_d_state
+        self.expand = config.mamba_expand
+        self.d_inner = self.d_model * self.expand
+        self.headdim = config.mamba_headdim
+        self.nheads = self.d_inner // self.headdim
+        self.ngroups = config.mamba_ngroups
+        self.num_bc_heads = config.mamba_ngroups
+        self.mimo_rank = 1
+        self.num_rope_angles = self.nheads
+
+        d_in_proj = (
+            self.d_inner * 2
+            + self.d_state * self.num_bc_heads * self.mimo_rank * 2
+            + self.nheads * 3
+            + self.num_rope_angles
         )
+        self.in_proj = nn.Linear(self.d_model, d_in_proj, bias=False)
+        self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=False)
+
+        self.dt_bias = nn.Parameter(torch.zeros(self.nheads))
+        self.B_bias = nn.Parameter(
+            torch.zeros(self.nheads, self.mimo_rank, self.d_state)
+        )
+        self.C_bias = nn.Parameter(
+            torch.zeros(self.nheads, self.mimo_rank, self.d_state)
+        )
+        self.D = nn.Parameter(torch.ones(self.nheads))
+
+        self.B_norm = RMSNorm(self.d_state, eps=config.rms_norm_eps)
+        self.C_norm = RMSNorm(self.d_state, eps=config.rms_norm_eps)
+
+    def forward(self, u: torch.Tensor, **kwargs) -> torch.Tensor:
+        B, T, _ = u.shape
+        zxBCdt = self.in_proj(u)
+        splits = [
+            self.d_inner,
+            self.d_inner,
+            self.d_state * self.num_bc_heads * self.mimo_rank,
+            self.d_state * self.num_bc_heads * self.mimo_rank,
+            self.nheads,
+            self.nheads,
+            self.nheads,
+            self.num_rope_angles,
+        ]
+        z, x, B_vec, C_vec, dt, A_vec, trap, angles = torch.split(
+            zxBCdt, splits, dim=-1
+        )
+
+        B_vec = (
+            self.B_norm(B_vec.view(B, T, self.d_state)).view(B, T, 1, 1, self.d_state)
+            + self.B_bias.unsqueeze(0).unsqueeze(0)
+        )
+        C_vec = (
+            self.C_norm(C_vec.view(B, T, self.d_state)).view(B, T, 1, 1, self.d_state)
+            + self.C_bias.unsqueeze(0).unsqueeze(0)
+        )
+
+        dt = F.softplus(dt + self.dt_bias)
+        A = -torch.exp(A_vec)
+
+        x_heads = x.view(B, T, self.nheads, self.headdim)
+        out_heads = []
+        h = torch.zeros(
+            B, self.nheads, self.headdim, self.d_state, device=u.device, dtype=u.dtype
+        )
+
+        for t in range(T):
+            dt_t = dt[:, t].unsqueeze(-1).unsqueeze(-1)
+            A_t = A[:, t].unsqueeze(-1).unsqueeze(-1)
+            decay = torch.exp(A_t * dt_t)
+
+            b_t = B_vec[:, t, 0, 0, None, :]
+            c_t = C_vec[:, t, 0, 0, None, :]
+            x_t = x_heads[:, t, :, :, None]
+
+            h = decay * h + dt_t * (x_t * b_t)
+            y_t = (h * c_t).sum(dim=-1) + self.D[None, :, None] * x_heads[:, t]
+            out_heads.append(y_t)
+
+        out_heads = torch.stack(out_heads, dim=1)
+        out = out_heads.view(B, T, self.d_inner) * F.silu(z)
+        return self.out_proj(out)
+
+
+class MambaBlock(nn.Module):
+    """Wrapper around Mamba-3 SSM module with PyTorch native fallback."""
+
+    def __init__(self, config: BanglaGambaConfig, layer_idx: int = 0):
+        super().__init__()
+        if _HAS_MAMBA:
+            self.mamba = Mamba3(
+                d_model=config.d_model,
+                d_state=config.mamba_d_state,
+                expand=config.mamba_expand,
+                headdim=config.mamba_headdim,
+                ngroups=config.mamba_ngroups,
+                chunk_size=config.mamba_chunk_size,
+                layer_idx=layer_idx,
+            )
+        else:
+            self.mamba = PyTorchMamba3(config=config, layer_idx=layer_idx)
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         return self.mamba(x)
