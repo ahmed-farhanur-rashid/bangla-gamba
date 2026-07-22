@@ -8,6 +8,7 @@ AutoModelForCausalLM with trust_remote_code=True.
 from __future__ import annotations
 
 import math
+import warnings
 from typing import Optional, Tuple, Union
 
 torch_import_err = None
@@ -30,12 +31,17 @@ from transformers.modeling_outputs import CausalLMOutput
 
 from .configuration_banglagamba import BanglaGambaConfig
 
+_HAS_MAMBA = False
+_MAMBA_ERR = None
 try:
     from mamba_ssm.modules.mamba3 import Mamba3
     _HAS_MAMBA = True
-except ImportError:
+except Exception as e:
     Mamba3 = None
     _HAS_MAMBA = False
+    _MAMBA_ERR = str(e)
+
+print(f"[BanglaGamba Init] _HAS_MAMBA={_HAS_MAMBA}, _MAMBA_ERR={_MAMBA_ERR}")
 
 
 # ── RMSNorm & Embedding Components ──────────────────────────────────────────
@@ -107,23 +113,23 @@ class RotaryEmbedding(nn.Module):
         )
         self.register_buffer("inv_freq", inv_freq, persistent=False)
 
-        t = torch.arange(max_seq_len, dtype=torch.float32)
-        freqs = torch.outer(t, inv_freq)
-        emb = torch.cat([freqs, freqs], dim=-1)
-        self.register_buffer("cos_cached", emb.cos(), persistent=False)
-        self.register_buffer("sin_cached", emb.sin(), persistent=False)
-
     def forward(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
         positions: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        T = positions.shape[1]
         dtype = q.dtype
-
-        cos = self.cos_cached[:T].to(dtype=dtype).unsqueeze(0).unsqueeze(2)
-        sin = self.sin_cached[:T].to(dtype=dtype).unsqueeze(0).unsqueeze(2)
+        device = q.device
+        
+        # Use positions to compute cos/sin on the fly
+        # positions is (B, T) - assuming same positions for batch
+        t = positions[0].float()
+        freqs = torch.outer(t, self.inv_freq.to(device))
+        emb = torch.cat([freqs, freqs], dim=-1)
+        
+        cos = emb.cos().to(dtype=dtype).unsqueeze(0).unsqueeze(2)
+        sin = emb.sin().to(dtype=dtype).unsqueeze(0).unsqueeze(2)
 
         q_rot = q * cos + _rotate_half(q) * sin
         k_rot = k * cos + _rotate_half(k) * sin
@@ -197,12 +203,15 @@ class GQAttention(nn.Module):
         k = k.transpose(1, 2)
         v = v.transpose(1, 2)
 
+        if self.n_heads != self.n_kv_heads:
+            k = k.repeat_interleave(self.n_heads // self.n_kv_heads, dim=1)
+            v = v.repeat_interleave(self.n_heads // self.n_kv_heads, dim=1)
+
         attn_output = F.scaled_dot_product_attention(
             q, k, v,
             attn_mask=None,
             dropout_p=0.0,
             is_causal=True,
-            enable_gqa=True,
         )
 
         attn_output = attn_output.transpose(1, 2).contiguous().view(B, T, -1)
@@ -315,6 +324,13 @@ class MambaBlock(nn.Module):
                 layer_idx=layer_idx,
             )
         else:
+            if layer_idx == 0:
+                warnings.warn(
+                    f"[BanglaGamba Warning] Hardware Mamba3 failed to load (_HAS_MAMBA=False). "
+                    f"Reason: {_MAMBA_ERR}. "
+                    "Falling back to PyTorchMamba3, which degrades generation quality. "
+                    "Please ensure mamba_ssm and causal_conv1d are properly installed."
+                )
             self.mamba = PyTorchMamba3(config=config, layer_idx=layer_idx)
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -491,9 +507,10 @@ class BanglaGambaForCausalLM(BanglaGambaPreTrainedModel, GenerationMixin):
                 shift_labels.view(-1),
             )
 
+        logits_fp32 = torch.nan_to_num(logits.float(), nan=0.0, posinf=30.0, neginf=-30.0)
         return CausalLMOutput(
             loss=loss,
-            logits=logits,
+            logits=logits_fp32,
         )
 
 
