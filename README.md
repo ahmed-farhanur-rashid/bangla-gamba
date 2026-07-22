@@ -6,6 +6,8 @@ Formerly BanglaFM. A Bangla-centric language model pretrained from scratch on a 
 
 The naming follows the convention of hybrid architectures like Jamba (JQA + Mamba) and Samba (SWA + Mamba).
 
+Sibling Model: [Bangla-GSG](https://github.com/tasmin-jahan/bangla-gsg)
+
 ## Architecture
 
 | Property | Value |
