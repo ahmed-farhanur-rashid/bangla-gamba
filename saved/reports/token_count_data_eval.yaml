@@ -1,0 +1,21 @@
+generated_at: '2026-07-22T22:31:06.507382'
+format: npy
+files:
+  saved/data/eval/bng/sn_shard_00006.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/eval/bng/sn_shard_00007.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/eval/eng/en_shard_00006.npy:
+    total_tokens: 204800000
+    total_seqs: 100000
+    seq_len: 2048
+  saved/data/eval/translation/opus_nmt_shard_00000.npy:
+    total_tokens: 29642752
+    total_seqs: 14474
+    seq_len: 2048
+grand_total_tokens: 644042752
+grand_total_seqs: 314474

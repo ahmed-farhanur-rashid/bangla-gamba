@@ -1,0 +1,69 @@
+summary:
+  input_file: saved/logs/opus_opensubtitles_nmt_norm_failures.jsonl
+  total_failures: 132630
+  unique_tokens: 7
+sources:
+  opus_opensubtitles: 132630
+classification:
+  standalone_halant: 132522
+  standalone_nasalization: 58
+  standalone_vowel_sign: 34
+  standalone_mark: 16
+top_tokens:
+- token: ্
+  count: 132522
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 1
+  classification: standalone_halant
+  sources:
+    opus_opensubtitles: 132522
+- token: ঃ
+  count: 58
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 1
+  classification: standalone_nasalization
+  sources:
+    opus_opensubtitles: 58
+- token: ়
+  count: 16
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 1
+  classification: standalone_mark
+  sources:
+    opus_opensubtitles: 16
+- token: ে
+  count: 14
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    opus_opensubtitles: 14
+- token: ো
+  count: 10
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    opus_opensubtitles: 10
+- token: া
+  count: 6
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    opus_opensubtitles: 6
+- token: ু
+  count: 4
+  unicode: U+09C1
+  name: BENGALI VOWEL SIGN U
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    opus_opensubtitles: 4
+component_analysis: []

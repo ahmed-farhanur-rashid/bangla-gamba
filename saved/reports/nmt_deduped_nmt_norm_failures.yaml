@@ -1,0 +1,1058 @@
+summary:
+  input_file: saved/logs/nmt_deduped_nmt_norm_failures.jsonl
+  total_failures: 28106
+  unique_tokens: 117
+sources:
+  nllb: 27704
+  banglanmt: 402
+classification:
+  standalone_nasalization: 12690
+  standalone_mark: 5082
+  standalone_vowel_sign: 4944
+  standalone_halant: 3338
+  symbol: 1506
+  repeated_char: 212
+  stacked_vowel_signs: 186
+  mixed_diacritics: 100
+  other_multi_char: 20
+  other_single_char: 20
+  stacked_nasal_marks: 8
+top_tokens:
+- token: ঃ
+  count: 12390
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 1
+  classification: standalone_nasalization
+  sources:
+    nllb: 12138
+    banglanmt: 252
+- token: ়
+  count: 5072
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 1
+  classification: standalone_mark
+  sources:
+    nllb: 5060
+    banglanmt: 12
+- token: ্
+  count: 3338
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 1
+  classification: standalone_halant
+  sources:
+    nllb: 3330
+    banglanmt: 8
+- token: া
+  count: 2156
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 2104
+    banglanmt: 52
+- token: ৳
+  count: 1438
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  length: 1
+  classification: symbol
+  sources:
+    nllb: 1434
+    banglanmt: 4
+- token: ে
+  count: 1400
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 1374
+    banglanmt: 26
+- token: ি
+  count: 516
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 510
+    banglanmt: 6
+- token: ো
+  count: 352
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 344
+    banglanmt: 8
+- token: ু
+  count: 216
+  unicode: U+09C1
+  name: BENGALI VOWEL SIGN U
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 204
+    banglanmt: 12
+- token: ং
+  count: 190
+  unicode: U+0982
+  name: BENGALI SIGN ANUSVARA
+  length: 1
+  classification: standalone_nasalization
+  sources:
+    nllb: 182
+    banglanmt: 8
+- token: ী
+  count: 156
+  unicode: U+09C0
+  name: BENGALI VOWEL SIGN II
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 150
+    banglanmt: 6
+- token: ঁ
+  count: 110
+  unicode: U+0981
+  name: BENGALI SIGN CANDRABINDU
+  length: 1
+  classification: standalone_nasalization
+  sources:
+    nllb: 110
+- token: ৃ
+  count: 84
+  unicode: U+09C3
+  name: BENGALI VOWEL SIGN VOCALIC R
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 84
+- token: ঃঃ
+  count: 66
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 66
+- token: িা
+  count: 58
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 58
+- token: ূ
+  count: 54
+  unicode: U+09C2
+  name: BENGALI VOWEL SIGN UU
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 54
+- token: ৹
+  count: 40
+  unicode: U+09F9
+  name: BENGALI CURRENCY DENOMINATOR SIXTEEN
+  length: 1
+  classification: symbol
+  sources:
+    nllb: 40
+- token: িং
+  count: 34
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 34
+- token: ঃঃঃ
+  count: 26
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 3
+  classification: repeated_char
+  sources:
+    nllb: 26
+- token: াি
+  count: 24
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 24
+- token: িি
+  count: 22
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 20
+    banglanmt: 2
+- token: েে
+  count: 16
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 16
+- token: ঌ
+  count: 14
+  unicode: U+098C
+  name: BENGALI LETTER VOCALIC L
+  length: 1
+  classification: other_single_char
+  sources:
+    nllb: 12
+    banglanmt: 2
+- token: ৴
+  count: 12
+  unicode: U+09F4
+  name: BENGALI CURRENCY NUMERATOR ONE
+  length: 1
+  classification: symbol
+  sources:
+    nllb: 12
+- token: িু
+  count: 10
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 10
+- token: াে
+  count: 10
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 10
+- token: োো
+  count: 10
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 10
+- token: িঃ
+  count: 10
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 10
+- token: ৗ
+  count: 10
+  unicode: U+09D7
+  name: BENGALI AU LENGTH MARK
+  length: 1
+  classification: standalone_mark
+  sources:
+    nllb: 10
+- token: েোে
+  count: 8
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 3
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 8
+- token: ্্্
+  count: 8
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 3
+  classification: repeated_char
+  sources:
+    nllb: 8
+- token: ৲
+  count: 8
+  unicode: U+09F2
+  name: BENGALI RUPEE MARK
+  length: 1
+  classification: symbol
+  sources:
+    nllb: 8
+- token: ্্
+  count: 8
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 8
+- token: ৳৳৳
+  count: 8
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  length: 3
+  classification: repeated_char
+  sources:
+    nllb: 8
+- token: েু
+  count: 8
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 8
+- token: ৳৳
+  count: 6
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 6
+- token: িািা
+  count: 6
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 4
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 6
+- token: ৺
+  count: 6
+  unicode: U+09FA
+  name: BENGALI ISSHAR
+  length: 1
+  classification: symbol
+  sources:
+    nllb: 6
+- token: ্া
+  count: 6
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 6
+- token: ৈ
+  count: 6
+  unicode: U+09C8
+  name: BENGALI VOWEL SIGN AI
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 6
+- token: িো
+  count: 6
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 6
+- token: ীে
+  count: 4
+  unicode: U+09C0
+  name: BENGALI VOWEL SIGN II
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: ৳৳৳৳
+  count: 4
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  length: 4
+  classification: repeated_char
+  sources:
+    nllb: 4
+- token: িৃ
+  count: 4
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: ুি
+  count: 4
+  unicode: U+09C1
+  name: BENGALI VOWEL SIGN U
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: ৶৹
+  count: 4
+  unicode: U+09F6
+  name: BENGALI CURRENCY NUMERATOR THREE
+  length: 2
+  classification: other_multi_char
+  sources:
+    nllb: 4
+- token: ৸৹
+  count: 4
+  unicode: U+09F8
+  name: BENGALI CURRENCY NUMERATOR ONE LESS THAN THE DENOMINATOR
+  length: 2
+  classification: other_multi_char
+  sources:
+    nllb: 4
+- token: িাে
+  count: 4
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 3
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: েঃ
+  count: 4
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 4
+- token: ৸৸
+  count: 4
+  unicode: U+09F8
+  name: BENGALI CURRENCY NUMERATOR ONE LESS THAN THE DENOMINATOR
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 4
+- token: াা
+  count: 4
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 4
+- token: ঃঃঃঃঃঃ
+  count: 4
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 6
+  classification: repeated_char
+  sources:
+    nllb: 4
+- token: াাঁ
+  count: 4
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 4
+- token: ঃঁ
+  count: 4
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 2
+  classification: stacked_nasal_marks
+  sources:
+    nllb: 4
+- token: ৌ
+  count: 4
+  unicode: U+09CC
+  name: BENGALI VOWEL SIGN AU
+  length: 1
+  classification: standalone_vowel_sign
+  sources:
+    nllb: 4
+- token: িে
+  count: 4
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: ুঃ
+  count: 4
+  unicode: U+09C1
+  name: BENGALI VOWEL SIGN U
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 4
+- token: েুে
+  count: 4
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 3
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: োি
+  count: 4
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 4
+- token: ঁং
+  count: 2
+  unicode: U+0981
+  name: BENGALI SIGN CANDRABINDU
+  length: 2
+  classification: stacked_nasal_marks
+  sources:
+    nllb: 2
+- token: ়ঃ
+  count: 2
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: োিুে
+  count: 2
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 4
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ািা
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 3
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ঃঃঃঃ
+  count: 2
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 4
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ীেি
+  count: 2
+  unicode: U+09C0
+  name: BENGALI VOWEL SIGN II
+  length: 3
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ্্্্্্্
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 7
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ্ী
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ্ু
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ্ূ
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ়়
+  count: 2
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: াঃ
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ৳৳৳৳৳
+  count: 2
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  length: 5
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ৵৳৵৴
+  count: 2
+  unicode: U+09F5
+  name: BENGALI CURRENCY NUMERATOR TWO
+  length: 4
+  classification: other_multi_char
+  sources:
+    nllb: 2
+- token: ঁা
+  count: 2
+  unicode: U+0981
+  name: BENGALI SIGN CANDRABINDU
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: েেে
+  count: 2
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 3
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: েুাে
+  count: 2
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 4
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ীি
+  count: 2
+  unicode: U+09C0
+  name: BENGALI VOWEL SIGN II
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: েো
+  count: 2
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: াাঃ
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ্োূা
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 4
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: িূ
+  count: 2
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: াং
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: োঁ
+  count: 2
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ৵৹
+  count: 2
+  unicode: U+09F5
+  name: BENGALI CURRENCY NUMERATOR TWO
+  length: 2
+  classification: other_multi_char
+  sources:
+    nllb: 2
+- token: ীী
+  count: 2
+  unicode: U+09C0
+  name: BENGALI VOWEL SIGN II
+  length: 2
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: িোেো
+  count: 2
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 4
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ি্া
+  count: 2
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ৶৳
+  count: 2
+  unicode: U+09F6
+  name: BENGALI CURRENCY NUMERATOR THREE
+  length: 2
+  classification: other_multi_char
+  sources:
+    nllb: 2
+- token: ঃঃঃঃঃ
+  count: 2
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  length: 5
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ়়়়়
+  count: 2
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 5
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ঁঃ
+  count: 2
+  unicode: U+0981
+  name: BENGALI SIGN CANDRABINDU
+  length: 2
+  classification: stacked_nasal_marks
+  sources:
+    nllb: 2
+- token: ৳৳৳৳৳৳৳৳৳৳৳৳৳৳৳৳৳৳
+  count: 2
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  length: 18
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ৵
+  count: 2
+  unicode: U+09F5
+  name: BENGALI CURRENCY NUMERATOR TWO
+  length: 1
+  classification: symbol
+  sources:
+    nllb: 2
+- token: ৸৳
+  count: 2
+  unicode: U+09F8
+  name: BENGALI CURRENCY NUMERATOR ONE LESS THAN THE DENOMINATOR
+  length: 2
+  classification: other_multi_char
+  sources:
+    nllb: 2
+- token: ৈৈৈ
+  count: 2
+  unicode: U+09C8
+  name: BENGALI VOWEL SIGN AI
+  length: 3
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: াু
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: েঁে
+  count: 2
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ােঃ
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ঌং
+  count: 2
+  unicode: U+098C
+  name: BENGALI LETTER VOCALIC L
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: োোো
+  count: 2
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 3
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ঽ
+  count: 2
+  unicode: U+09BD
+  name: BENGALI SIGN AVAGRAHA
+  length: 1
+  classification: other_single_char
+  sources:
+    nllb: 2
+- token: িিাংি
+  count: 2
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  length: 5
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ুোীী
+  count: 2
+  unicode: U+09C1
+  name: BENGALI VOWEL SIGN U
+  length: 4
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: েৃ
+  count: 2
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ়ে
+  count: 2
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ্্্্্্্্্্
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 10
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ৴৹
+  count: 2
+  unicode: U+09F4
+  name: BENGALI CURRENCY NUMERATOR ONE
+  length: 2
+  classification: other_multi_char
+  sources:
+    nllb: 2
+- token: ্্্্্
+  count: 2
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  length: 5
+  classification: repeated_char
+  sources:
+    nllb: 2
+- token: ািঃ
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ো়ে
+  count: 2
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  length: 3
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: ৶৺৳
+  count: 2
+  unicode: U+09F6
+  name: BENGALI CURRENCY NUMERATOR THREE
+  length: 3
+  classification: other_multi_char
+  sources:
+    nllb: 2
+- token: ৈে
+  count: 2
+  unicode: U+09C8
+  name: BENGALI VOWEL SIGN AI
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ়া
+  count: 2
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  length: 2
+  classification: mixed_diacritics
+  sources:
+    nllb: 2
+- token: েী
+  count: 2
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: াো
+  count: 2
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  length: 2
+  classification: stacked_vowel_signs
+  sources:
+    nllb: 2
+- token: ৠ
+  count: 2
+  unicode: U+09E0
+  name: BENGALI LETTER VOCALIC RR
+  length: 1
+  classification: other_single_char
+  sources:
+    banglanmt: 2
+- token: ৡ
+  count: 2
+  unicode: U+09E1
+  name: BENGALI LETTER VOCALIC LL
+  length: 1
+  classification: other_single_char
+  sources:
+    banglanmt: 2
+component_analysis:
+- token: ি
+  unicode: U+09BF
+  name: BENGALI VOWEL SIGN I
+  count: 208
+- token: া
+  unicode: U+09BE
+  name: BENGALI VOWEL SIGN AA
+  count: 144
+- token: ঃ
+  unicode: U+0983
+  name: BENGALI SIGN VISARGA
+  count: 134
+- token: ে
+  unicode: U+09C7
+  name: BENGALI VOWEL SIGN E
+  count: 88
+- token: ো
+  unicode: U+09CB
+  name: BENGALI VOWEL SIGN O
+  count: 46
+- token: ং
+  unicode: U+0982
+  name: BENGALI SIGN ANUSVARA
+  count: 42
+- token: ু
+  unicode: U+09C1
+  name: BENGALI VOWEL SIGN U
+  count: 40
+- token: ্
+  unicode: U+09CD
+  name: BENGALI SIGN VIRAMA
+  count: 38
+- token: ৳
+  unicode: U+09F3
+  name: BENGALI RUPEE SIGN
+  count: 30
+- token: ঁ
+  unicode: U+0981
+  name: BENGALI SIGN CANDRABINDU
+  count: 18
+- token: ী
+  unicode: U+09C0
+  name: BENGALI VOWEL SIGN II
+  count: 16
+- token: ়
+  unicode: U+09BC
+  name: BENGALI SIGN NUKTA
+  count: 12
+- token: ৹
+  unicode: U+09F9
+  name: BENGALI CURRENCY DENOMINATOR SIXTEEN
+  count: 12
+- token: ৸
+  unicode: U+09F8
+  name: BENGALI CURRENCY NUMERATOR ONE LESS THAN THE DENOMINATOR
+  count: 10
+- token: ৶
+  unicode: U+09F6
+  name: BENGALI CURRENCY NUMERATOR THREE
+  count: 8
+- token: ূ
+  unicode: U+09C2
+  name: BENGALI VOWEL SIGN UU
+  count: 6
+- token: ৃ
+  unicode: U+09C3
+  name: BENGALI VOWEL SIGN VOCALIC R
+  count: 6
+- token: ৵
+  unicode: U+09F5
+  name: BENGALI CURRENCY NUMERATOR TWO
+  count: 4
+- token: ৴
+  unicode: U+09F4
+  name: BENGALI CURRENCY NUMERATOR ONE
+  count: 4
+- token: ৈ
+  unicode: U+09C8
+  name: BENGALI VOWEL SIGN AI
+  count: 4
+- token: ঌ
+  unicode: U+098C
+  name: BENGALI LETTER VOCALIC L
+  count: 2
+- token: ৺
+  unicode: U+09FA
+  name: BENGALI ISSHAR
+  count: 2
