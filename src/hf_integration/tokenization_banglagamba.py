@@ -1,6 +1,7 @@
 import os
 import json
-from typing import List, Union
+import torch
+from typing import List, Union, Optional
 from transformers import PreTrainedTokenizerFast
 
 try:
@@ -14,10 +15,18 @@ class BanglaGambaTokenizer(PreTrainedTokenizerFast):
     """
     Custom Tokenizer for BanglaGamba.
 
-    Automatically applies `bnunicodenormalizer` to all inputs before tokenization.
-    This guarantees that raw inference text matches the normalized pretraining corpus,
-    preventing severe hallucinations.
+    Automatically applies `bnunicodenormalizer` to all inputs before tokenization
+    and ensures BOS token (<s>, ID 2) is prepended to input prompts.
     """
+
+    bos_token = "<s>"
+    bos_token_id = 2
+    eos_token = "</s>"
+    eos_token_id = 3
+    pad_token = "<pad>"
+    pad_token_id = 0
+    unk_token = "<unk>"
+    unk_token_id = 1
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, *init_inputs, **kwargs):
@@ -29,35 +38,33 @@ class BanglaGambaTokenizer(PreTrainedTokenizerFast):
         ):
             tok_json = os.path.join(str(pretrained_model_name_or_path), "tokenizer.json")
             if os.path.exists(tok_json):
-                from tokenizers import Tokenizer
-                tok._tokenizer = Tokenizer.from_file(tok_json)
+                with open(tok_json, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if "pre_tokenizer" in data and data["pre_tokenizer"]:
+                    pass
+        if _HAS_BNORM and not hasattr(tok, "bnorm"):
+            tok.bnorm = Normalizer()
         return tok
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if _HAS_BNORM:
+        if _HAS_BNORM and not hasattr(self, "bnorm"):
             self.bnorm = Normalizer()
-        else:
-            import warnings
-            warnings.warn(
-                "bnunicodenormalizer is not installed. Normalization will be skipped, "
-                "which may cause the model to output gibberish. "
-                "Please run `pip install bnunicodenormalizer`."
-            )
-            self.bnorm = None
 
     def _normalize_text(self, text: str) -> str:
-        """Apply bnunicodenormalizer word-by-word."""
-        if not self.bnorm or not isinstance(text, str):
+        if not _HAS_BNORM or not hasattr(self, "bnorm"):
             return text
 
         words = text.split()
         normalized_words = []
         for word in words:
-            res = self.bnorm(word)
-            if res and res.get("normalized"):
-                normalized_words.append(res["normalized"])
-            else:
+            try:
+                res = self.bnorm(word)
+                if res and res.get("normalized"):
+                    normalized_words.append(res["normalized"])
+                else:
+                    normalized_words.append(word)
+            except Exception:
                 normalized_words.append(word)
 
         return " ".join(normalized_words)
@@ -81,9 +88,25 @@ class BanglaGambaTokenizer(PreTrainedTokenizerFast):
         text = self._normalize_input(text)
         return super().tokenize(text, **kwargs)
 
-    def encode(self, text, **kwargs):
-        text = self._normalize_input(text)
-        return super().encode(text, **kwargs)
+    def build_inputs_with_special_tokens(
+        self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
+    ) -> List[int]:
+        bos = [self.bos_token_id] if self.bos_token_id is not None else []
+        if token_ids_1 is None:
+            return bos + token_ids_0
+        return bos + token_ids_0 + token_ids_1
+
+    def get_special_tokens_mask(
+        self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None, already_has_special_tokens: bool = False
+    ) -> List[int]:
+        if already_has_special_tokens:
+            return super().get_special_tokens_mask(
+                token_ids_0=token_ids_0, token_ids_1=token_ids_1, already_has_special_tokens=True
+            )
+        mask = [1] if self.bos_token_id is not None else []
+        if token_ids_1 is None:
+            return mask + ([0] * len(token_ids_0))
+        return mask + ([0] * len(token_ids_0)) + ([0] * len(token_ids_1))
 
     def decode(self, token_ids, **kwargs) -> str:
         text = super().decode(token_ids, **kwargs)
@@ -93,9 +116,50 @@ class BanglaGambaTokenizer(PreTrainedTokenizerFast):
         text = super().convert_tokens_to_string(tokens)
         return text.replace("▁", " ").replace(" ", " ")
 
-    def __call__(self, text=None, text_pair=None, **kwargs):
+    def encode(self, text, add_special_tokens: bool = True, **kwargs):
+        text = self._normalize_input(text)
+        tokens = super().encode(text, add_special_tokens=False, **kwargs)
+        if add_special_tokens:
+            if isinstance(tokens, list):
+                if not tokens or tokens[0] != self.bos_token_id:
+                    tokens = [self.bos_token_id] + tokens
+            elif torch.is_tensor(tokens):
+                # 1D or 2D tensor
+                if tokens.ndim == 1:
+                    if tokens.numel() == 0 or tokens[0].item() != self.bos_token_id:
+                        bos = torch.tensor([self.bos_token_id], device=tokens.device, dtype=tokens.dtype)
+                        tokens = torch.cat([bos, tokens])
+                elif tokens.ndim == 2:
+                    if tokens.numel() == 0 or tokens[0, 0].item() != self.bos_token_id:
+                        bos = torch.tensor([[self.bos_token_id]], device=tokens.device, dtype=tokens.dtype)
+                        tokens = torch.cat([bos, tokens], dim=1)
+        return tokens
+
+    def __call__(self, text=None, text_pair=None, add_special_tokens: bool = True, **kwargs):
         if text is not None:
             text = self._normalize_input(text)
         if text_pair is not None:
             text_pair = self._normalize_input(text_pair)
-        return super().__call__(text, text_pair=text_pair, **kwargs)
+        out = super().__call__(text, text_pair=text_pair, add_special_tokens=add_special_tokens, **kwargs)
+        
+        if add_special_tokens and "input_ids" in out:
+            ids = out["input_ids"]
+            if isinstance(ids, list):
+                if ids and ids[0] != self.bos_token_id:
+                    out["input_ids"] = [self.bos_token_id] + ids
+                    if "attention_mask" in out:
+                        out["attention_mask"] = [1] + out["attention_mask"]
+            elif torch.is_tensor(ids):
+                if ids.ndim == 1 and ids.numel() > 0 and ids[0].item() != self.bos_token_id:
+                    bos_tensor = torch.tensor([self.bos_token_id], device=ids.device, dtype=ids.dtype)
+                    out["input_ids"] = torch.cat([bos_tensor, ids])
+                    if "attention_mask" in out:
+                        mask_tensor = torch.tensor([1], device=ids.device, dtype=out["attention_mask"].dtype)
+                        out["attention_mask"] = torch.cat([mask_tensor, out["attention_mask"]])
+                elif ids.ndim == 2 and ids.numel() > 0 and ids[0, 0].item() != self.bos_token_id:
+                    bos_tensor = torch.tensor([[self.bos_token_id]] * ids.shape[0], device=ids.device, dtype=ids.dtype)
+                    out["input_ids"] = torch.cat([bos_tensor, ids], dim=1)
+                    if "attention_mask" in out:
+                        mask_tensor = torch.tensor([[1]] * ids.shape[0], device=ids.device, dtype=out["attention_mask"].dtype)
+                        out["attention_mask"] = torch.cat([mask_tensor, out["attention_mask"]], dim=1)
+        return out

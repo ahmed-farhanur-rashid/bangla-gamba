@@ -25,6 +25,7 @@ class BanglaGambaConfig(PretrainedConfig):
         rms_norm_eps=1e-5,
         qk_norm=True,
         tie_embeddings=True,
+        use_cache=False,
         **kwargs,
     ):
         self.d_model = d_model
@@ -57,6 +58,7 @@ class BanglaGambaConfig(PretrainedConfig):
         self.rms_norm_eps = rms_norm_eps
         self.qk_norm = qk_norm
         self.tie_embeddings = tie_embeddings
+        self.use_cache = False
 
         # Super init handles kwargs drop-in, serialization, etc.
         super().__init__(**kwargs)

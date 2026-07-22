@@ -1,0 +1,25 @@
+evaluations:
+  translation:
+    total_loss: 1.4982
+    ce_loss: 1.4976
+    z_loss: 0.0006
+    perplexity: 4.4708
+    batches: 3618
+  eng:
+    total_loss: 2.9216
+    ce_loss: 2.9203
+    z_loss: 0.0013
+    perplexity: 18.5464
+    batches: 25000
+  bng:
+    total_loss: 3.3228
+    ce_loss: 3.322
+    z_loss: 0.0009
+    perplexity: 27.7152
+    batches: 50000
+  overall:
+    total_loss: 2.5809
+    ce_loss: 2.58
+    z_loss: 0.0009
+    perplexity: 16.9108
+    batches: 78618
