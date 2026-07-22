@@ -107,11 +107,12 @@ class RotaryEmbedding(nn.Module):
         assert d_head % 2 == 0, f"d_head must be even, got {d_head}"
         self.d_head = d_head
         self.max_seq_len = max_seq_len
+        self.base = base
 
         inv_freq = 1.0 / (
             base ** (torch.arange(0, d_head, 2, dtype=torch.float32) / d_head)
         )
-        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self.register_buffer("inv_freq", inv_freq, persistent=True)
 
     def forward(
         self,
@@ -121,13 +122,15 @@ class RotaryEmbedding(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor]:
         dtype = q.dtype
         device = q.device
-        
-        # Use positions to compute cos/sin on the fly
-        # positions is (B, T) - assuming same positions for batch
+
+        inv_freq = 1.0 / (
+            self.base ** (torch.arange(0, self.d_head, 2, dtype=torch.float32, device=device) / self.d_head)
+        )
+
         t = positions[0].float()
-        freqs = torch.outer(t, self.inv_freq.to(device))
+        freqs = torch.outer(t, inv_freq)
         emb = torch.cat([freqs, freqs], dim=-1)
-        
+
         cos = emb.cos().to(dtype=dtype).unsqueeze(0).unsqueeze(2)
         sin = emb.sin().to(dtype=dtype).unsqueeze(0).unsqueeze(2)
 
