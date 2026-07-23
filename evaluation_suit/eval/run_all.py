@@ -63,11 +63,11 @@ def run_task_01(models, seeds, dry_run=False, save_checkpoints=False):
 
 
 def run_task_02(models, seeds, dry_run=False, save_checkpoints=False):
-    """02_ner — ANCHOLIK + WikiAnn"""
+    """02_ner — WikiAnn"""
     from evaluation_suit.eval.ner.run import train_and_evaluate
 
     results = []
-    for dataset in ["ancholik", "wikiann"]:
+    for dataset in ["wikiann"]:
         for model in models:
             for seed in seeds:
                 desc = f"ner/{model}/{dataset}/seed={seed}"

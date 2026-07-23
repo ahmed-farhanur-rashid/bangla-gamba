@@ -114,22 +114,41 @@ class NLIDataset(Dataset):
 # ── Hidden State Extraction ──────────────────────────────────────────────────
 
 def get_hidden_states(model, input_ids, model_type):
-    """Extract hidden states from the base model."""
-    if model_type == "causal_lm":
-        inner = model
-        if hasattr(model, "model"):
-            inner = model.model
-        if hasattr(inner, "forward") and "return_hidden" in str(inner.forward.__code__.co_varnames):
-            return inner(input_ids, return_hidden=True)
-        outputs = model(input_ids, output_hidden_states=True)
-        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
-            return outputs.hidden_states[-1]
-        raise RuntimeError("Cannot extract hidden states from causal LM.")
-    else:
-        outputs = model(input_ids, output_hidden_states=True)
-        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
-            return outputs.hidden_states[-1]
-        raise RuntimeError("Cannot extract hidden states from masked LM.")
+    """Extract hidden states from base model for classification head."""
+    inner = getattr(model, "model", model)
+
+    if hasattr(inner, "forward"):
+        try:
+            res = inner(input_ids, return_hidden=True)
+            if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
+                return res
+        except Exception:
+            pass
+
+    try:
+        res = model(input_ids, return_hidden=True)
+        if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
+            return res
+    except Exception:
+        pass
+
+    if hasattr(inner, "embedding") and hasattr(inner, "layers") and hasattr(inner, "final_norm"):
+        B, T = input_ids.shape
+        device = input_ids.device
+        x = inner.embedding(input_ids)
+        positions = torch.arange(T, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
+        for layer in inner.layers:
+            x = layer(x, positions=positions, rope=inner.rope)
+        x = inner.final_norm(x)
+        return x
+
+    outputs = model(input_ids, output_hidden_states=True)
+    if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
+        return outputs.hidden_states[-1]
+    if hasattr(outputs, "last_hidden_state") and outputs.last_hidden_state is not None:
+        return outputs.last_hidden_state
+
+    raise RuntimeError("Could not extract hidden states from model.")
 
 
 # ── Training Loop ────────────────────────────────────────────────────────────

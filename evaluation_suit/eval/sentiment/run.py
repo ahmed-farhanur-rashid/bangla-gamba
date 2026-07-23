@@ -118,41 +118,47 @@ class SentimentDataset(Dataset):
 
 def get_hidden_states(model, input_ids, model_type, model_key):
     """
-    Extract hidden states from the base model.
+    Extract hidden states from base model for classification head.
 
-    Handles the different model architectures:
-    - BanglaGamba: model.model.model(input_ids, return_hidden=True)
-    - BanglaGSG: similar pattern with trust_remote_code
-    - BanglaBERT: model.bert(input_ids) or model(input_ids, output_hidden_states=True)
+    Supports BanglaGamba, BanglaGSG, and BanglaBERT cleanly.
     """
-    if model_type == "causal_lm":
-        # For causal LMs (gamba/gsg), we need the hidden states before lm_head
-        # The HF wrapper's inner model has return_hidden support
-        inner = model
-        if hasattr(model, "model"):
-            inner = model.model
+    inner = getattr(model, "model", model)
 
-        # Try return_hidden=True (BanglaGamba native)
-        if hasattr(inner, "forward") and "return_hidden" in str(inner.forward.__code__.co_varnames):
-            hidden = inner(input_ids, return_hidden=True)
-            return hidden
+    # 1. Try return_hidden=True on inner or outer model
+    if hasattr(inner, "forward"):
+        try:
+            res = inner(input_ids, return_hidden=True)
+            if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
+                return res
+        except Exception:
+            pass
 
-        # Fallback: use output_hidden_states
-        outputs = model(input_ids, output_hidden_states=True)
-        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
-            return outputs.hidden_states[-1]
+    try:
+        res = model(input_ids, return_hidden=True)
+        if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
+            return res
+    except Exception:
+        pass
 
-        # Last resort: hook into the model
-        raise RuntimeError(
-            f"Cannot extract hidden states from {model_key}. "
-            "Model does not support return_hidden or output_hidden_states."
-        )
-    else:
-        # Masked LM (BanglaBERT)
-        outputs = model(input_ids, output_hidden_states=True)
-        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
-            return outputs.hidden_states[-1]
-        raise RuntimeError("Cannot extract hidden states from masked LM.")
+    # 2. Backbone pass for BanglaGSG
+    if hasattr(inner, "embedding") and hasattr(inner, "layers") and hasattr(inner, "final_norm"):
+        B, T = input_ids.shape
+        device = input_ids.device
+        x = inner.embedding(input_ids)
+        positions = torch.arange(T, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
+        for layer in inner.layers:
+            x = layer(x, positions=positions, rope=inner.rope)
+        x = inner.final_norm(x)
+        return x
+
+    # 3. Standard HF output_hidden_states
+    outputs = model(input_ids, output_hidden_states=True)
+    if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
+        return outputs.hidden_states[-1]
+    if hasattr(outputs, "last_hidden_state") and outputs.last_hidden_state is not None:
+        return outputs.last_hidden_state
+
+    raise RuntimeError(f"Could not extract hidden states for model '{model_key}'.")
 
 
 # ── Training Loop ────────────────────────────────────────────────────────────
