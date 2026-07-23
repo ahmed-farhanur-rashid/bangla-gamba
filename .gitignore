@@ -49,6 +49,8 @@ ENV/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+*.log
+saved/logs/*.log
 
 # ── Private / Sensitive ─────────────────────────────────────
 no_upload/

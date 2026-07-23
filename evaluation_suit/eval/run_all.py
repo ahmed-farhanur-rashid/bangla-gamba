@@ -25,6 +25,10 @@ import argparse
 import sys
 import time
 import traceback
+import logging
+import warnings
+import yaml
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -40,7 +44,35 @@ from evaluation_suit.eval.common.io_utils import write_json, read_json
 
 console = Console()
 
-SEEDS = [0, 1, 2]
+# Configure Logging
+log_dir = Path("saved/logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+log_file = log_dir / f"eval_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(log_file),
+    ]
+)
+logging.captureWarnings(True)
+
+# Suppress transformers console spam
+os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
+logging.getLogger("transformers").setLevel(logging.ERROR)
+
+def get_default_seeds():
+    config_path = Path(__file__).resolve().parent.parent / "configs" / "tasks.yaml"
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+            return config.get("seeds", [0, 1, 2])
+    except Exception as e:
+        logging.error(f"Failed to load tasks.yaml: {e}")
+        return [0, 1, 2]
+
+SEEDS = get_default_seeds()
 ALL_MODELS = ["gamba", "gsg", "banglabert"]
 GENERATIVE_MODELS = ["gamba", "gsg"]
 

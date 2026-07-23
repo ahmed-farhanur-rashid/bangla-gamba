@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+import logging
 import torch
 import yaml
 from transformers import (
@@ -114,8 +115,8 @@ def load_model(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     device = torch.device(device)
 
-    print(f"[ModelRegistry] Loading '{display_name}' from {hf_repo}...")
-    print(f"  model_type={model_type}, trust_remote_code={trust_remote_code}")
+    logging.info(f"[ModelRegistry] Loading '{display_name}' from {hf_repo}...")
+    logging.info(f"  model_type={model_type}, trust_remote_code={trust_remote_code}")
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
@@ -148,13 +149,13 @@ def load_model(
     claimed = cfg.get("claimed_params_m", 0) * 1e6
     actual_m = total_params / 1e6
 
-    print(f"  Loaded: {actual_m:.1f}M params (claimed: {claimed/1e6:.0f}M)")
+    logging.info(f"  Loaded: {actual_m:.1f}M params (claimed: {claimed/1e6:.0f}M)")
 
     if claimed > 0:
         deviation = abs(total_params - claimed) / claimed
         if deviation > 0.05:
-            print(
-                f"  ⚠ WARNING: Param count deviation {deviation*100:.1f}% "
+            logging.warning(
+                f"  Param count deviation {deviation*100:.1f}% "
                 f"exceeds 5% threshold! "
                 f"Actual={total_params:,}, Claimed={int(claimed):,}"
             )
