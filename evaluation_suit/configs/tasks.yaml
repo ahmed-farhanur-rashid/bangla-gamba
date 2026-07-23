@@ -22,7 +22,6 @@ ner:
   max_seq_len: 256
   metric: entity_f1
   datasets:
-    - ancholik
     - wikiann
 
 nli:

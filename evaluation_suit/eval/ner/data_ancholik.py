@@ -82,11 +82,15 @@ def load_ancholik(
     if not cache_path.exists():
         print(f"[ANCHOLIK] Cloning from {_GITHUB_URL}...")
         os.makedirs(cache_path.parent, exist_ok=True)
-        ret = os.system(f"git clone {_GITHUB_URL} {cache_path}")
-        if ret != 0:
+        ret = os.system(f"GIT_TERMINAL_PROMPT=0 git clone {_GITHUB_URL} {cache_path}")
+        if ret != 0 or not cache_path.exists() or len(list(cache_path.iterdir())) <= 1:
+            if cache_path.exists():
+                import shutil
+                shutil.rmtree(cache_path, ignore_errors=True)
             raise RuntimeError(
-                f"Failed to clone ANCHOLIK-NER from {_GITHUB_URL}. "
-                "Check your network connection or download manually."
+                f"Failed to clone ANCHOLIK-NER repository from {_GITHUB_URL}.\n"
+                "The repository is unavailable or private on GitHub.\n"
+                "Please use 'wikiann' dataset for NER evaluation."
             )
 
     # Discover data files (CoNLL format)

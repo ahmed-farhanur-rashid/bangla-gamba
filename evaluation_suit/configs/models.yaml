@@ -8,7 +8,7 @@ gamba:
   display_name: BanglaGamba
   model_type: causal_lm
   trust_remote_code: true
-  claimed_params_m: 199
+  claimed_params_m: 249
   seq_len: 2048
 
 gsg:
@@ -16,7 +16,7 @@ gsg:
   display_name: BanglaGSG
   model_type: causal_lm
   trust_remote_code: true
-  claimed_params_m: 186
+  claimed_params_m: 235
   seq_len: 2048
   requires:
     - bnunicodenormalizer
