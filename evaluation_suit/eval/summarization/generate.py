@@ -34,9 +34,22 @@ from evaluation_suit.eval.common.metrics import compute_rouge, compute_bertscore
 
 PROMPT_TEMPLATE = "নিম্নলিখিত লেখাটির সংক্ষিপ্তসার লিখুন:\n\n{article}\n\nসংক্ষিপ্তসার:"
 
+PROMPT_SUMMARIZATION_FEWSHOT = """নিম্নলিখিত লেখাটির সংক্ষিপ্তসার লিখুন:
+
+গত রাতে শহরের প্রধান বাজারে এক ভয়াবহ অগ্নিকাণ্ডের ঘটনা ঘটেছে। দমকল বাহিনীর পাঁচটি ইউনিট দীর্ঘ তিন ঘণ্টার চেষ্টায় আগুন নিয়ন্ত্রণে আনে। আগুনে বেশ কয়েকটি দোকান পুড়ে ছাই হয়ে গেছে, তবে কোনো হতাহতের খবর পাওয়া যায়নি। বৈদ্যুতিক শর্ট সার্কিট থেকে এই আগুনের সূত্রপাত বলে প্রাথমিকভাবে ধারণা করা হচ্ছে।
+
+সংক্ষিপ্তসার: শহরের প্রধান বাজারে অগ্নিকাণ্ডে কয়েকটি দোকান পুড়ে গেলেও কোনো হতাহতের ঘটনা ঘটেনি।
+
+নিম্নলিখিত লেখাটির সংক্ষিপ্তসার লিখুন:
+
+{article}
+
+সংক্ষিপ্তসার:"""
+
 
 def run_summarization_eval(
     model_key: str,
+    num_shots: int = 0,
     max_new_tokens: int = 256,
     max_src_len: int = 1024,
     max_examples: int = None,
@@ -98,7 +111,8 @@ def run_summarization_eval(
             article_tokens = article_tokens[:max_src_len]
             article = loaded.tokenizer.decode(article_tokens, skip_special_tokens=True)
 
-        prompt = PROMPT_TEMPLATE.format(article=article)
+        prompt_tmpl = PROMPT_SUMMARIZATION_FEWSHOT if num_shots > 0 else PROMPT_TEMPLATE
+        prompt = prompt_tmpl.format(article=article)
 
         inputs = loaded.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
         input_ids = inputs["input_ids"].to(device)

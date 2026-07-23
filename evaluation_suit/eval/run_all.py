@@ -119,7 +119,7 @@ def run_task_03(models, seeds, dry_run=False, save_checkpoints=False):
     return results
 
 
-def run_task_04(models, dry_run=False):
+def run_task_04(models, mt_shots=[0, 5], dry_run=False):
     """04_mt — FLORES-200 (contamination check + generation)"""
     from evaluation_suit.eval.mt.check_contamination import check_contamination
 
@@ -134,7 +134,8 @@ def run_task_04(models, dry_run=False):
     if dry_run:
         console.log("[bold yellow][DRY RUN][/bold yellow] Would run: 04_mt/check_contamination")
         for m in gen_models:
-            console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: 04_mt/{m}/generate")
+            for num_shots in mt_shots:
+                console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: 04_mt/{m}/{num_shots}-shot/generate")
         return []
 
     console.print(Panel(f"[bold cyan]Running:[/bold cyan] 04_mt/check_contamination", border_style="cyan"))
@@ -159,16 +160,17 @@ def run_task_04(models, dry_run=False):
     from evaluation_suit.eval.mt.generate import run_mt_eval
 
     for model in gen_models:
-        desc = f"04_mt/{model}/generate"
-        console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
-        try:
-            r = run_mt_eval(model_key=model)
-            results.append({"task": "04_mt", "model": model, "status": "completed"})
-        except Exception as e:
-            console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
-            traceback.print_exc()
-            results.append({"task": "04_mt", "model": model,
-                            "status": "failed", "error": str(e)})
+        for num_shots in mt_shots:
+            desc = f"04_mt/{model}/{num_shots}-shot/generate"
+            console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
+            try:
+                r = run_mt_eval(model_key=model, num_shots=num_shots)
+                results.append({"task": "04_mt", "model": model, "shots": num_shots, "status": "completed"})
+            except Exception as e:
+                console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
+                traceback.print_exc()
+                results.append({"task": "04_mt", "model": model, "shots": num_shots,
+                                "status": "failed", "error": str(e)})
     return results
 
 
@@ -214,7 +216,7 @@ def run_task_05(models, dry_run=False):
     return results
 
 
-def run_task_06(models, dry_run=False):
+def run_task_06(models, sum_shots=[0, 1], dry_run=False):
     """06_summarization — XL-Sum"""
     from evaluation_suit.eval.summarization.generate import run_summarization_eval
 
@@ -225,20 +227,21 @@ def run_task_06(models, dry_run=False):
         return [{"task": "06_summarization", "status": "skipped", "reason": "No generative models"}]
 
     for model in gen_models:
-        desc = f"06_summarization/{model}"
-        if dry_run:
-            console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: {desc}")
-            continue
-            
-        console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
-        try:
-            r = run_summarization_eval(model_key=model)
-            results.append({"task": "06_summarization", "model": model, "status": "completed"})
-        except Exception as e:
-            console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
-            traceback.print_exc()
-            results.append({"task": "06_summarization", "model": model,
-                            "status": "failed", "error": str(e)})
+        for num_shots in sum_shots:
+            desc = f"06_summarization/{model}/{num_shots}-shot"
+            if dry_run:
+                console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: {desc}")
+                continue
+                
+            console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
+            try:
+                r = run_summarization_eval(model_key=model, num_shots=num_shots)
+                results.append({"task": "06_summarization", "model": model, "shots": num_shots, "status": "completed"})
+            except Exception as e:
+                console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
+                traceback.print_exc()
+                results.append({"task": "06_summarization", "model": model, "shots": num_shots,
+                                "status": "failed", "error": str(e)})
     return results
 
 
@@ -263,6 +266,10 @@ def main():
                         help="Show what would run without running")
     parser.add_argument("--save-checkpoints", action="store_true",
                         help="Save fine-tuned head weights to disk for HF upload")
+    parser.add_argument("--mt-shots", nargs="+", type=int, default=[0, 5],
+                        help="Number of shots for MT task (e.g. 0 5)")
+    parser.add_argument("--sum-shots", nargs="+", type=int, default=[0, 1],
+                        help="Number of shots for Summarization task (e.g. 0 1)")
     args = parser.parse_args()
 
     start_time = time.time()
@@ -274,6 +281,10 @@ def main():
     config_text.append(f"{args.tasks}\n")
     config_text.append("Seeds: ", style="bold")
     config_text.append(f"{args.seeds}\n")
+    config_text.append("MT Shots: ", style="bold")
+    config_text.append(f"{args.mt_shots}\n")
+    config_text.append("Sum Shots: ", style="bold")
+    config_text.append(f"{args.sum_shots}\n")
     config_text.append("Dry run: ", style="bold")
     config_text.append(f"{args.dry_run}\n")
     config_text.append("Save Checkpoints: ", style="bold")
@@ -290,6 +301,10 @@ def main():
         # Tasks 01-03 take models + seeds + save_checkpoints; 04-06 take models only
         if task_key in ("01", "02", "03"):
             results = runner(args.models, args.seeds, args.dry_run, args.save_checkpoints)
+        elif task_key == "04":
+            results = runner(args.models, args.mt_shots, args.dry_run)
+        elif task_key == "06":
+            results = runner(args.models, args.sum_shots, args.dry_run)
         else:
             results = runner(args.models, args.dry_run)
 
