@@ -428,21 +428,29 @@ class BanglaGambaModel(nn.Module):
         self,
         input_ids: torch.Tensor,
         return_hidden: bool = False,
-    ) -> torch.Tensor:
+        output_hidden_states: bool = False,
+    ) -> torch.Tensor | tuple:
         B, T = input_ids.shape
         device = input_ids.device
 
         x = self.embedding(input_ids)
         positions = torch.arange(T, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
 
+        all_hidden_states = () if output_hidden_states else None
         for layer in self.layers:
+            if output_hidden_states:
+                all_hidden_states = all_hidden_states + (x,)
             x = layer(x, positions=positions, rope=self.rope)
 
         x = self.final_norm(x)
-        if return_hidden:
-            return x
+        if output_hidden_states:
+            all_hidden_states = all_hidden_states + (x,)
 
-        return self.lm_head(x)
+        if return_hidden:
+            return (x, all_hidden_states) if output_hidden_states else x
+
+        logits = self.lm_head(x)
+        return (logits, all_hidden_states) if output_hidden_states else logits
 
 
 # ── Hugging Face PreTrainedModel Base & CausalLM Wrapper ──────────────────────
@@ -488,8 +496,11 @@ class BanglaGambaForCausalLM(BanglaGambaPreTrainedModel, GenerationMixin):
         input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.LongTensor] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+        return_hidden: bool = False,
         **kwargs,
-    ) -> CausalLMOutput:
+    ) -> CausalLMOutput | torch.Tensor | tuple:
         if attention_mask is not None:
             if not torch.all(attention_mask.bool()):
                 raise NotImplementedError(
@@ -498,7 +509,27 @@ class BanglaGambaForCausalLM(BanglaGambaPreTrainedModel, GenerationMixin):
                     "Process variable-length sequences with batch_size=1 without padding."
                 )
 
-        logits = self.model(input_ids)
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None
+            else getattr(self.config, "output_hidden_states", False)
+        )
+
+        res = self.model(
+            input_ids,
+            return_hidden=return_hidden,
+            output_hidden_states=output_hidden_states,
+        )
+
+        if output_hidden_states:
+            main_out, hidden_states = res
+        else:
+            main_out = res
+            hidden_states = None
+
+        if return_hidden:
+            return main_out
+
+        logits = main_out
 
         loss = None
         if labels is not None:
@@ -511,9 +542,19 @@ class BanglaGambaForCausalLM(BanglaGambaPreTrainedModel, GenerationMixin):
             )
 
         logits_fp32 = torch.nan_to_num(logits.float(), nan=0.0, posinf=30.0, neginf=-30.0)
+
+        if return_dict is False:
+            output = (logits_fp32,)
+            if output_hidden_states:
+                output = output + (hidden_states,)
+            if loss is not None:
+                output = (loss,) + output
+            return output
+
         return CausalLMOutput(
             loss=loss,
             logits=logits_fp32,
+            hidden_states=hidden_states,
         )
 
 

@@ -118,32 +118,16 @@ def get_hidden_states(model, input_ids, attention_mask, model_type):
     """Extract hidden states from base model for classification head."""
     inner = getattr(model, "model", model)
 
-    if hasattr(inner, "forward"):
-        try:
-            res = inner(input_ids, attention_mask=attention_mask, return_hidden=True)
-            if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
-                return res
-        except Exception:
-            pass
-
-    try:
-        res = model(input_ids, attention_mask=attention_mask, return_hidden=True)
-        if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
-            return res
-    except Exception:
-        pass
-
+    # 1. Core PyTorch backbone (BanglaGambaModel / BanglaGSGModel)
     if hasattr(inner, "embedding") and hasattr(inner, "layers") and hasattr(inner, "final_norm"):
-        B, T = input_ids.shape
-        device = input_ids.device
-        x = inner.embedding(input_ids)
-        positions = torch.arange(T, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
-        for layer in inner.layers:
-            x = layer(x, positions=positions, rope=inner.rope)
-        x = inner.final_norm(x)
-        return x
+        return inner(input_ids, return_hidden=True)
 
-    outputs = model(input_ids, attention_mask=attention_mask, output_hidden_states=True)
+    # 2. HuggingFace AutoModel / CausalLM / MaskedLM
+    if model_type == "causal_lm":
+        outputs = model(input_ids, output_hidden_states=True)
+    else:
+        outputs = model(input_ids, attention_mask=attention_mask, output_hidden_states=True)
+
     if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
         return outputs.hidden_states[-1]
     if hasattr(outputs, "last_hidden_state") and outputs.last_hidden_state is not None:
@@ -232,7 +216,7 @@ def train_and_evaluate(
             labels = batch["label"].to(device)
 
             with torch.no_grad():
-                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
+                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
                     hidden = get_hidden_states(loaded.model, input_ids, attn_mask, loaded.model_type)
 
             logits = head(hidden.float(), attn_mask, loaded.model_type)
@@ -256,7 +240,7 @@ def train_and_evaluate(
                 attn_mask = batch["attention_mask"].to(device)
                 labels = batch["label"]
 
-                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
+                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
                     hidden = get_hidden_states(loaded.model, input_ids, attn_mask, loaded.model_type)
 
                 logits = head(hidden.float(), attn_mask, loaded.model_type)
@@ -284,7 +268,7 @@ def train_and_evaluate(
             attn_mask = batch["attention_mask"].to(device)
             labels = batch["label"]
 
-            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
                 hidden = get_hidden_states(loaded.model, input_ids, attn_mask, loaded.model_type)
 
             logits = head(hidden.float(), attn_mask, loaded.model_type)
