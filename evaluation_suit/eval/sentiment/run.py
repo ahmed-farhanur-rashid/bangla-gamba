@@ -119,7 +119,7 @@ class SentimentDataset(Dataset):
 
 # ── Hidden State Extraction ──────────────────────────────────────────────────
 
-def get_hidden_states(model, input_ids, attention_mask, model_type, model_key):
+def get_hidden_states(model, input_ids, attention_mask, model_type, model_key=None):
     """
     Extract hidden states from base model for classification head.
     Supports BanglaGamba, BanglaGSG, and BanglaBERT cleanly.
@@ -140,8 +140,6 @@ def get_hidden_states(model, input_ids, attention_mask, model_type, model_key):
         return outputs.hidden_states[-1]
     if hasattr(outputs, "last_hidden_state") and outputs.last_hidden_state is not None:
         return outputs.last_hidden_state
-
-    raise RuntimeError(f"Could not extract hidden states for model {model_key}")
 
     raise RuntimeError(f"Could not extract hidden states for model '{model_key}'.")
 
