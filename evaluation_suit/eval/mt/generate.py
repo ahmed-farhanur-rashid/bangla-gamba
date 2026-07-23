@@ -21,7 +21,8 @@ from pathlib import Path
 
 import torch
 from datasets import load_dataset
-from tqdm import tqdm
+from rich import print
+from rich.progress import track
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
@@ -161,7 +162,7 @@ def run_mt_eval(
         references = []
         hypotheses = []
 
-        for ex in tqdm(flores, desc=direction):
+        for ex in track(flores, description=direction):
             source = ex[src_key]
             reference = ex[tgt_key]
 

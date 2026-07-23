@@ -19,7 +19,8 @@ from pathlib import Path
 
 import torch
 from datasets import load_dataset
-from tqdm import tqdm
+from rich import print
+from rich.progress import track
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
@@ -87,7 +88,7 @@ def run_summarization_eval(
     references = []
     hypotheses = []
 
-    for example in tqdm(ds, desc=f"[{model_key}] Summarization"):
+    for example in track(ds, description=f"[{model_key}] Summarization"):
         article = example["text"]
         reference = example["summary"]
 

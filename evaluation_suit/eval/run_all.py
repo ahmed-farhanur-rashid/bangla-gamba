@@ -28,10 +28,17 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich import print as rprint
+from rich.text import Text
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from evaluation_suit.eval.common.io_utils import write_json, read_json
 
+console = Console()
 
 SEEDS = [0, 1, 2]
 ALL_MODELS = ["gamba", "gsg", "banglabert"]
@@ -47,15 +54,15 @@ def run_task_01(models, seeds, dry_run=False, save_checkpoints=False):
         for seed in seeds:
             desc = f"sentiment/{model}/seed={seed}"
             if dry_run:
-                print(f"  [DRY RUN] Would run: {desc}")
+                console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: {desc}")
                 continue
-            print(f"\n{'='*60}\n  Running: {desc}\n{'='*60}")
+            console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
             try:
                 r = train_and_evaluate(model_key=model, seed=seed, save_checkpoint=save_checkpoints)
                 results.append({"task": "sentiment", "model": model, "seed": seed,
                                 "status": "completed" if r else "skipped"})
             except Exception as e:
-                print(f"  ✗ FAILED: {e}")
+                console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
                 traceback.print_exc()
                 results.append({"task": "sentiment", "model": model, "seed": seed,
                                 "status": "failed", "error": str(e)})
@@ -72,15 +79,15 @@ def run_task_02(models, seeds, dry_run=False, save_checkpoints=False):
             for seed in seeds:
                 desc = f"ner/{model}/{dataset}/seed={seed}"
                 if dry_run:
-                    print(f"  [DRY RUN] Would run: {desc}")
+                    console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: {desc}")
                     continue
-                print(f"\n{'='*60}\n  Running: {desc}\n{'='*60}")
+                console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
                 try:
                     r = train_and_evaluate(model_key=model, dataset_name=dataset, seed=seed, save_checkpoint=save_checkpoints)
                     results.append({"task": "ner", "model": model, "dataset": dataset,
                                     "seed": seed, "status": "completed" if r else "skipped"})
                 except Exception as e:
-                    print(f"  ✗ FAILED: {e}")
+                    console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
                     traceback.print_exc()
                     results.append({"task": "ner", "model": model, "dataset": dataset,
                                     "seed": seed, "status": "failed", "error": str(e)})
@@ -97,15 +104,15 @@ def run_task_03(models, seeds, dry_run=False, save_checkpoints=False):
             for seed in seeds:
                 desc = f"nli/{model}/{dataset}/seed={seed}"
                 if dry_run:
-                    print(f"  [DRY RUN] Would run: {desc}")
+                    console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: {desc}")
                     continue
-                print(f"\n{'='*60}\n  Running: {desc}\n{'='*60}")
+                console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
                 try:
                     r = train_and_evaluate(model_key=model, dataset_name=dataset, seed=seed, save_checkpoint=save_checkpoints)
                     results.append({"task": "nli", "model": model, "dataset": dataset,
                                     "seed": seed, "status": "completed" if r else "skipped"})
                 except Exception as e:
-                    print(f"  ✗ FAILED: {e}")
+                    console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
                     traceback.print_exc()
                     results.append({"task": "nli", "model": model, "dataset": dataset,
                                     "seed": seed, "status": "failed", "error": str(e)})
@@ -120,30 +127,30 @@ def run_task_04(models, dry_run=False):
     gen_models = [m for m in models if m in GENERATIVE_MODELS]
 
     if not gen_models:
-        print("  [04_mt] No generative models selected. Skipping.")
+        console.log("[bold yellow][04_mt][/bold yellow] No generative models selected. Skipping.")
         return [{"task": "04_mt", "status": "skipped", "reason": "No generative models"}]
 
     # Step 1: Contamination check
     if dry_run:
-        print("  [DRY RUN] Would run: 04_mt/check_contamination")
+        console.log("[bold yellow][DRY RUN][/bold yellow] Would run: 04_mt/check_contamination")
         for m in gen_models:
-            print(f"  [DRY RUN] Would run: 04_mt/{m}/generate")
+            console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: 04_mt/{m}/generate")
         return []
 
-    print(f"\n{'='*60}\n  Running: 04_mt/check_contamination\n{'='*60}")
+    console.print(Panel(f"[bold cyan]Running:[/bold cyan] 04_mt/check_contamination", border_style="cyan"))
     try:
         report = check_contamination()
         results.append({"task": "04_mt", "step": "contamination_check",
                         "status": "completed", "proceed": report.get("proceed", False)})
     except Exception as e:
-        print(f"  ✗ Contamination check FAILED: {e}")
+        console.print(f"[bold red]✗ Contamination check FAILED:[/bold red] {e}")
         traceback.print_exc()
         results.append({"task": "04_mt", "step": "contamination_check",
                         "status": "failed", "error": str(e)})
         return results
 
     if not report.get("proceed", False):
-        print("  ⚠ MT eval GATED by contamination. Skipping generation.")
+        console.print("[bold yellow]⚠ MT eval GATED by contamination. Skipping generation.[/bold yellow]")
         results.append({"task": "04_mt", "step": "generate",
                         "status": "gated", "reason": report.get("reason", "")})
         return results
@@ -153,12 +160,12 @@ def run_task_04(models, dry_run=False):
 
     for model in gen_models:
         desc = f"04_mt/{model}/generate"
-        print(f"\n{'='*60}\n  Running: {desc}\n{'='*60}")
+        console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
         try:
             r = run_mt_eval(model_key=model)
             results.append({"task": "04_mt", "model": model, "status": "completed"})
         except Exception as e:
-            print(f"  ✗ FAILED: {e}")
+            console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
             traceback.print_exc()
             results.append({"task": "04_mt", "model": model,
                             "status": "failed", "error": str(e)})
@@ -174,9 +181,9 @@ def run_task_05(models, dry_run=False):
         return [{"task": "05_long_context", "status": "skipped", "reason": "No generative models"}]
 
     if dry_run:
-        print("  [DRY RUN] Would run: 05_long_context/build_niah")
+        console.log("[bold yellow][DRY RUN][/bold yellow] Would run: 05_long_context/build_niah")
         for m in gen_models:
-            print(f"  [DRY RUN] Would run: 05_long_context/{m}/run")
+            console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: 05_long_context/{m}/run")
         return []
 
     # Build NIAH dataset (uses gamba tokenizer)
@@ -185,7 +192,7 @@ def run_task_05(models, dry_run=False):
 
     niah_data = "evaluation_suit/results/05_long_context/niah_data/niah_samples.jsonl"
     if not Path(niah_data).exists():
-        print(f"\n{'='*60}\n  Building NIAH dataset\n{'='*60}")
+        console.print(Panel(f"[bold cyan]Building NIAH dataset[/bold cyan]", border_style="cyan"))
         tokenizer = AutoTokenizer.from_pretrained(
             "ahmed-farhanur-rashid/bangla-gamba", trust_remote_code=True,
         )
@@ -195,12 +202,12 @@ def run_task_05(models, dry_run=False):
 
     for model in gen_models:
         desc = f"05_long_context/{model}"
-        print(f"\n{'='*60}\n  Running: {desc}\n{'='*60}")
+        console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
         try:
             r = run_niah_eval(model_key=model)
             results.append({"task": "05_long_context", "model": model, "status": "completed"})
         except Exception as e:
-            print(f"  ✗ FAILED: {e}")
+            console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
             traceback.print_exc()
             results.append({"task": "05_long_context", "model": model,
                             "status": "failed", "error": str(e)})
@@ -220,14 +227,15 @@ def run_task_06(models, dry_run=False):
     for model in gen_models:
         desc = f"06_summarization/{model}"
         if dry_run:
-            print(f"  [DRY RUN] Would run: {desc}")
+            console.log(f"[bold yellow][DRY RUN][/bold yellow] Would run: {desc}")
             continue
-        print(f"\n{'='*60}\n  Running: {desc}\n{'='*60}")
+            
+        console.print(Panel(f"[bold cyan]Running:[/bold cyan] {desc}", border_style="cyan"))
         try:
             r = run_summarization_eval(model_key=model)
             results.append({"task": "06_summarization", "model": model, "status": "completed"})
         except Exception as e:
-            print(f"  ✗ FAILED: {e}")
+            console.print(f"[bold red]✗ FAILED:[/bold red] {e}")
             traceback.print_exc()
             results.append({"task": "06_summarization", "model": model,
                             "status": "failed", "error": str(e)})
@@ -258,22 +266,26 @@ def main():
     args = parser.parse_args()
 
     start_time = time.time()
-    print(f"{'='*60}")
-    print(f"  Bangla LM Eval Suite")
-    print(f"  Models: {args.models}")
-    print(f"  Tasks: {args.tasks}")
-    print(f"  Seeds: {args.seeds}")
-    print(f"  Dry run: {args.dry_run}")
-    print(f"  Save Checkpoints: {args.save_checkpoints}")
-    print(f"{'='*60}\n")
+    
+    config_text = Text()
+    config_text.append("Models: ", style="bold")
+    config_text.append(f"{args.models}\n")
+    config_text.append("Tasks: ", style="bold")
+    config_text.append(f"{args.tasks}\n")
+    config_text.append("Seeds: ", style="bold")
+    config_text.append(f"{args.seeds}\n")
+    config_text.append("Dry run: ", style="bold")
+    config_text.append(f"{args.dry_run}\n")
+    config_text.append("Save Checkpoints: ", style="bold")
+    config_text.append(f"{args.save_checkpoints}")
+    
+    console.print(Panel(config_text, title="[bold magenta]Bangla LM Eval Suite[/bold magenta]", border_style="magenta"))
 
     all_results = []
 
     for task_key in sorted(args.tasks):
         task_name, runner = TASK_RUNNERS[task_key]
-        print(f"\n{'#'*60}")
-        print(f"  TASK: {task_name}")
-        print(f"{'#'*60}")
+        console.print(f"\n[bold reverse] TASK: {task_name} [/bold reverse]")
 
         # Tasks 01-03 take models + seeds + save_checkpoints; 04-06 take models only
         if task_key in ("01", "02", "03"):
@@ -285,6 +297,11 @@ def main():
 
     # Write manifest
     elapsed = time.time() - start_time
+    completed_count = sum(1 for r in all_results if r.get("status") == "completed")
+    skipped_count = sum(1 for r in all_results if r.get("status") == "skipped")
+    failed_count = sum(1 for r in all_results if r.get("status") == "failed")
+    gated_count = sum(1 for r in all_results if r.get("status") == "gated")
+    
     manifest = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "elapsed_seconds": round(elapsed, 1),
@@ -294,26 +311,32 @@ def main():
         "dry_run": args.dry_run,
         "task_results": all_results,
         "summary": {
-            "completed": sum(1 for r in all_results if r.get("status") == "completed"),
-            "skipped": sum(1 for r in all_results if r.get("status") == "skipped"),
-            "failed": sum(1 for r in all_results if r.get("status") == "failed"),
-            "gated": sum(1 for r in all_results if r.get("status") == "gated"),
+            "completed": completed_count,
+            "skipped": skipped_count,
+            "failed": failed_count,
+            "gated": gated_count,
         },
     }
 
     manifest_path = "evaluation_suit/results/manifest.json"
     if not args.dry_run:
         write_json(manifest_path, manifest)
-        print(f"\n{'='*60}")
-        print(f"  Suite complete in {elapsed:.0f}s")
-        print(f"  Manifest: {manifest_path}")
-        print(f"  Completed: {manifest['summary']['completed']}")
-        print(f"  Skipped: {manifest['summary']['skipped']}")
-        print(f"  Failed: {manifest['summary']['failed']}")
-        print(f"  Gated: {manifest['summary']['gated']}")
-        print(f"{'='*60}")
+        
+        table = Table(title="[bold green]Suite Complete[/bold green]")
+        table.add_column("Metric", style="cyan", no_wrap=True)
+        table.add_column("Value", style="magenta")
+        
+        table.add_row("Elapsed Time", f"{elapsed:.0f}s")
+        table.add_row("Manifest", f"{manifest_path}")
+        table.add_row("Completed", f"[green]{completed_count}[/green]")
+        table.add_row("Skipped", f"[yellow]{skipped_count}[/yellow]")
+        table.add_row("Failed", f"[red]{failed_count}[/red]")
+        table.add_row("Gated", f"[blue]{gated_count}[/blue]")
+        
+        console.print("\n")
+        console.print(table)
     else:
-        print(f"\n[DRY RUN] Would write manifest to {manifest_path}")
+        console.log(f"[bold yellow][DRY RUN][/bold yellow] Would write manifest to {manifest_path}")
 
 
 if __name__ == "__main__":

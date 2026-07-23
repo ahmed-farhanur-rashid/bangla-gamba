@@ -27,7 +27,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from tqdm import tqdm
+from rich import print
+from rich.progress import track
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
@@ -237,7 +238,7 @@ def train_and_evaluate(
         total_loss = 0.0
         n_batches = 0
 
-        for batch in tqdm(train_loader, desc=f"[{model_key}] Epoch {epoch+1}/{epochs}"):
+        for batch in track(train_loader, description=f"[{model_key}] Epoch {epoch+1}/{epochs}"):
             input_ids = batch["input_ids"].to(device)
             attn_mask = batch["attention_mask"].to(device)
             labels = batch["label"].to(device)

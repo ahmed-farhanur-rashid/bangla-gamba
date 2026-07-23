@@ -25,7 +25,8 @@ from pathlib import Path
 from collections import defaultdict
 
 import torch
-from tqdm import tqdm
+from rich import print
+from rich.progress import track
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
@@ -74,7 +75,7 @@ def run_niah_eval(
 
     # Run inference
     results = []
-    for sample in tqdm(samples, desc=f"[{model_key}] NIAH"):
+    for sample in track(samples, description=f"[{model_key}] NIAH"):
         prompt = sample["prompt"]
         expected = sample["expected_answer"]
 

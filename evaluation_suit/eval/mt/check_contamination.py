@@ -26,7 +26,8 @@ import sys
 from pathlib import Path
 
 from datasets import load_dataset
-from tqdm import tqdm
+from rich import print
+from rich.progress import track
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
@@ -133,7 +134,7 @@ def check_contamination(
     n_scanned = 0
 
     print("[Contamination] Scanning corpus for FLORES overlaps...")
-    for ex in tqdm(corpus, desc="Scanning"):
+    for ex in track(corpus, description="Scanning"):
         if max_corpus_samples and n_scanned >= max_corpus_samples:
             break
 
