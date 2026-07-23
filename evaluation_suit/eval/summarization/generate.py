@@ -62,7 +62,22 @@ def run_summarization_eval(
 
     # Load XL-Sum Bengali test split
     print("[06_summarization] Loading XL-Sum Bengali...")
-    ds = load_dataset("csebuetnlp/xlsum", "bengali", split="test")
+    try:
+        ds = load_dataset("csebuetnlp/xlsum", "bengali", split="test")
+    except Exception as e:
+        print(f"[06_summarization] Standard HF script load failed ({e}). Loading directly from HF archive...")
+        import tarfile, json
+        from huggingface_hub import hf_hub_download
+        from datasets import Dataset
+        tar_path = hf_hub_download("csebuetnlp/xlsum", filename="data/bengali_XLSum_v2.0.tar.bz2", repo_type="dataset")
+        records = []
+        with tarfile.open(tar_path, "r:bz2") as tar:
+            for member in tar.getmembers():
+                if "test" in member.name or "test.jsonl" in member.name:
+                    f = tar.extractfile(member)
+                    for line in f:
+                        records.append(json.loads(line.decode("utf-8")))
+        ds = Dataset.from_list(records)
 
     if max_examples:
         ds = ds.select(range(min(max_examples, len(ds))))

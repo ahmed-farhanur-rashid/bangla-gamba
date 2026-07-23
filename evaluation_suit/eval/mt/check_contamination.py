@@ -55,32 +55,31 @@ def check_contamination(
     Returns:
         Dict with overlap stats and a 'proceed' boolean.
     """
-    print("[Contamination] Loading FLORES-200 devtest...")
+    print("[Contamination] Loading FLORES-200 / FLORES+ devtest...")
+    flores = None
+    flores_sentences_bn = []
+    flores_sentences_en = []
+    
     try:
-        flores = load_dataset("facebook/flores", "ben_Beng-eng_Latn", split="devtest")
-    except Exception:
+        flores_bn = load_dataset("openlanguagedata/flores_plus", "ben_Beng", split="devtest")
+        flores_en = load_dataset("openlanguagedata/flores_plus", "eng_Latn", split="devtest")
+        flores_sentences_bn = [ex.get("text", ex.get("sentence", "")) for ex in flores_bn]
+        flores_sentences_en = [ex.get("text", ex.get("sentence", "")) for ex in flores_en]
+        print(f"[Contamination] Loaded openlanguagedata/flores_plus ({len(flores_sentences_bn)} BN, {len(flores_sentences_en)} EN)")
+    except Exception as e:
+        print(f"[Contamination] openlanguagedata/flores_plus load failed: {e}. Trying facebook/flores...")
         try:
-            flores = load_dataset("openlanguagedata/flores_plus", "ben_Beng-eng_Latn", split="devtest")
-        except Exception as e:
-            print(f"[Contamination] Failed to load FLORES-200: {e}")
-            print("[Contamination] Trying alternative loading...")
-            try:
-                flores_bn = load_dataset("facebook/flores", "ben_Beng", split="devtest")
-                flores_en = load_dataset("facebook/flores", "eng_Latn", split="devtest")
-                # Combine into a single dataset-like structure
-                flores_sentences_bn = [ex["sentence"] for ex in flores_bn]
-                flores_sentences_en = [ex["sentence"] for ex in flores_en]
-                flores = None  # handled specially below
-            except Exception as e2:
-                print(f"[Contamination] All FLORES loading attempts failed: {e2}")
-                report = {
-                    "status": "error",
-                    "error": str(e2),
-                    "proceed": False,
-                    "reason": "Cannot load FLORES-200 to check contamination.",
-                }
-                write_json(f"{results_dir}/contamination_report.json", report)
-                return report
+            flores = load_dataset("facebook/flores", "ben_Beng-eng_Latn", split="devtest")
+        except Exception as e2:
+            print(f"[Contamination] facebook/flores load failed: {e2}")
+            report = {
+                "status": "error",
+                "error": str(e2),
+                "proceed": False,
+                "reason": "Cannot load FLORES to check contamination.",
+            }
+            write_json(f"{results_dir}/contamination_report.json", report)
+            return report
 
     # Collect FLORES sentences
     flores_hashes = set()

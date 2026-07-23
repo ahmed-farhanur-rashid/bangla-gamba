@@ -128,29 +128,23 @@ def run_mt_eval(
     device = loaded.device
 
     # Load FLORES
-    print("[04_mt] Loading FLORES-200 devtest...")
+    print("[04_mt] Loading FLORES devtest (openlanguagedata/flores_plus)...")
     try:
+        flores_bn = load_dataset("openlanguagedata/flores_plus", "ben_Beng", split="devtest")
+        flores_en = load_dataset("openlanguagedata/flores_plus", "eng_Latn", split="devtest")
+        flores_data = [
+            {"sentence_ben_Beng": bn.get("text", bn.get("sentence", "")), "sentence_eng_Latn": en.get("text", en.get("sentence", ""))}
+            for bn, en in zip(flores_bn, flores_en)
+        ]
+        from datasets import Dataset
+        flores = Dataset.from_list(flores_data)
+        bn_key = "sentence_ben_Beng"
+        en_key = "sentence_eng_Latn"
+    except Exception as e:
+        print(f"[04_mt] openlanguagedata/flores_plus load failed: {e}. Trying facebook/flores...")
         flores = load_dataset("facebook/flores", "ben_Beng-eng_Latn", split="devtest")
         bn_key = "sentence_ben_Beng"
         en_key = "sentence_eng_Latn"
-    except Exception:
-        try:
-            flores = load_dataset("openlanguagedata/flores_plus", "ben_Beng-eng_Latn", split="devtest")
-            bn_key = "sentence_ben_Beng"
-            en_key = "sentence_eng_Latn"
-        except Exception:
-            # Try separate configs
-            flores_bn = load_dataset("facebook/flores", "ben_Beng", split="devtest")
-            flores_en = load_dataset("facebook/flores", "eng_Latn", split="devtest")
-            # Create paired data
-            flores_data = [
-                {"sentence_ben_Beng": bn["sentence"], "sentence_eng_Latn": en["sentence"]}
-                for bn, en in zip(flores_bn, flores_en)
-            ]
-            from datasets import Dataset
-            flores = Dataset.from_list(flores_data)
-            bn_key = "sentence_ben_Beng"
-            en_key = "sentence_eng_Latn"
 
     if max_examples:
         flores = flores.select(range(min(max_examples, len(flores))))

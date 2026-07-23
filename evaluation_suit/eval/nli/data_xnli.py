@@ -23,33 +23,36 @@ def load_xnli_bn() -> DatasetDict:
         Each example has 'premise' (str), 'hypothesis' (str), 'label' (int).
         Labels: 0=entailment, 1=neutral, 2=contradiction
     """
-    # Config candidates — "bn" was historically valid but may have changed
-    config_candidates = ["bn", "all_languages"]
+    # Load from csebuetnlp/xnli_bn archive directly
+    print("[XNLI] Loading XNLI Bangla from HF archive (csebuetnlp/xnli_bn)...")
+    import tarfile, json
+    from huggingface_hub import hf_hub_download
+    from datasets import Dataset, DatasetDict
 
-    ds = None
-    for config in config_candidates:
-        try:
-            ds = load_dataset("xnli", config)
-            print(f"[XNLI] Loaded with config='{config}'")
-            break
-        except Exception as e:
-            print(f"[XNLI] Config '{config}' failed: {e}")
-            continue
+    tar_path = hf_hub_download("csebuetnlp/xnli_bn", filename="data/xnli_bn.tar.bz2", repo_type="dataset")
+    label_map = {"entailment": 0, "neutral": 1, "contradiction": 2}
 
-    if ds is None:
-        # Try loading without config and filtering by language
-        try:
-            ds = load_dataset("xnli", "all_languages")
-            # Filter to Bangla
-            ds = ds.filter(lambda x: x.get("language", "") == "bn")
-            print("[XNLI] Loaded via 'all_languages' config, filtered to 'bn'")
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to load XNLI Bangla from HF. "
-                f"Tried configs: {config_candidates}. "
-                f"Last error: {e}. "
-                f"Check the XNLI HF card for current Bangla config name."
-            )
+    splits = {}
+    with tarfile.open(tar_path, "r:bz2") as tar:
+        for member in tar.getmembers():
+            for split_name in ["train", "val", "validation", "test"]:
+                if split_name in member.name:
+                    key = "validation" if split_name == "val" else split_name
+                    f = tar.extractfile(member)
+                    records = []
+                    for line in f:
+                        item = json.loads(line.decode("utf-8"))
+                        lbl = item.get("label", 0)
+                        if isinstance(lbl, str):
+                            lbl = label_map.get(lbl.lower().strip(), 0)
+                        records.append({
+                            "premise": item.get("sentence1", ""),
+                            "hypothesis": item.get("sentence2", ""),
+                            "label": lbl,
+                        })
+                    splits[key] = Dataset.from_list(records)
+
+    ds = DatasetDict(splits)
 
     # Verify we have the expected columns
     sample_split = list(ds.keys())[0]
