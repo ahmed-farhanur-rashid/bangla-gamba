@@ -19,6 +19,8 @@ Usage:
 """
 
 import argparse
+import copy
+import logging
 import sys
 import os
 from pathlib import Path
@@ -203,19 +205,45 @@ def train_and_evaluate(
     val_loader = DataLoader(val_ds, batch_size=eff_batch_size, shuffle=False, num_workers=2)
     test_loader = DataLoader(test_ds, batch_size=eff_batch_size, shuffle=False, num_workers=2)
 
-    # Optimizer — only train the classification head, freeze base model
-    # (This is the standard approach for comparing base model representations)
-    loaded.model.eval()
-    for param in loaded.model.parameters():
-        param.requires_grad = False
+    # Prepare isolated model copy for fine-tuning
+    model_copy = copy.deepcopy(loaded.model).to(device)
 
-    optimizer = torch.optim.AdamW(head.parameters(), lr=lr)
+    if model_key == "banglabert":
+        # Full End-to-End Fine-Tuning for BanglaBERT
+        for param in model_copy.parameters():
+            param.requires_grad = True
+        fine_tune_lr = lr  # Default 2e-5
+        logging.info(f"[{model_key}] Full End-to-End Fine-Tuning enabled (lr={fine_tune_lr})")
+    else:
+        # LoRA Fine-Tuning for Gamba & GSG
+        from peft import LoraConfig, get_peft_model
+        lora_config = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            target_modules="all-linear",
+            lora_dropout=0.05,
+        )
+        model_copy = get_peft_model(model_copy, lora_config)
+        fine_tune_lr = 1e-4 if lr == 2e-5 else lr  # Optimal LoRA lr
+        trainable = sum(p.numel() for p in model_copy.parameters() if p.requires_grad)
+        total = sum(p.numel() for p in model_copy.parameters())
+        logging.info(f"[{model_key}] LoRA Fine-Tuning enabled (lr={fine_tune_lr}, trainable={trainable:,}/{total:,})")
 
-    # Training
+    for param in head.parameters():
+        param.requires_grad = True
+
+    optimizer = torch.optim.AdamW(
+        list(filter(lambda p: p.requires_grad, model_copy.parameters())) + list(head.parameters()),
+        lr=fine_tune_lr,
+    )
+
+    # Training Loop
     best_val_f1 = 0.0
     best_head_state = None
+    best_model_state = None
 
     for epoch in range(epochs):
+        model_copy.train()
         head.train()
         total_loss = 0.0
         n_batches = 0
@@ -225,16 +253,16 @@ def train_and_evaluate(
             attn_mask = batch["attention_mask"].to(device)
             labels = batch["label"].to(device)
 
-            with torch.no_grad():
-                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
-                    hidden = get_hidden_states(
-                        loaded.model, input_ids, attn_mask, loaded.model_type, model_key
-                    )
+            optimizer.zero_grad()
+
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
+                hidden = get_hidden_states(
+                    model_copy, input_ids, attn_mask, loaded.model_type, model_key
+                )
 
             logits = head(hidden.float(), attn_mask, loaded.model_type)
             loss = F.cross_entropy(logits, labels)
 
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
@@ -244,6 +272,7 @@ def train_and_evaluate(
         avg_loss = total_loss / max(n_batches, 1)
 
         # Validation
+        model_copy.eval()
         head.eval()
         all_preds, all_labels = [], []
         with torch.no_grad():
@@ -254,7 +283,7 @@ def train_and_evaluate(
 
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
                     hidden = get_hidden_states(
-                        loaded.model, input_ids, attn_mask, loaded.model_type, model_key
+                        model_copy, input_ids, attn_mask, loaded.model_type, model_key
                     )
 
                 logits = head(hidden.float(), attn_mask, loaded.model_type)
@@ -268,12 +297,18 @@ def train_and_evaluate(
 
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
-            best_head_state = {k: v.clone() for k, v in head.state_dict().items()}
+            best_head_state = {k: v.clone().cpu() for k, v in head.state_dict().items()}
+            best_model_state = {k: v.clone().cpu() for k, v in model_copy.state_dict().items() if v.requires_grad}
 
-    # Test evaluation with best head
+    # Test evaluation with best model copy and head
     if best_head_state is not None:
-        head.load_state_dict(best_head_state)
+        head.load_state_dict({k: v.to(device) for k, v in best_head_state.items()})
+    if best_model_state is not None:
+        for k, v in best_model_state.items():
+            if k in model_copy.state_dict():
+                model_copy.state_dict()[k].copy_(v.to(device))
 
+    model_copy.eval()
     head.eval()
     all_preds, all_labels = [], []
     with torch.no_grad():
@@ -284,7 +319,7 @@ def train_and_evaluate(
 
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
                 hidden = get_hidden_states(
-                    loaded.model, input_ids, attn_mask, loaded.model_type, model_key
+                    model_copy, input_ids, attn_mask, loaded.model_type, model_key
                 )
 
             logits = head(hidden.float(), attn_mask, loaded.model_type)
@@ -316,29 +351,33 @@ def train_and_evaluate(
         "accuracy": round(test_acc, 4),
         "best_val_f1": round(best_val_f1, 4),
         "epochs": epochs,
-        "lr": lr,
+        "lr": fine_tune_lr,
         "batch_size": batch_size,
+        "mode": "full_finetune" if model_key == "banglabert" else "lora_finetune",
     }
     append_result(results_path, result)
     print(f"  Result appended to {results_path}")
 
-    # Save fine-tuned head checkpoint if requested
+    # Save fine-tuned checkpoint if requested
     if save_checkpoint and best_head_state is not None:
         ckpt_dir = Path(f"evaluation_suit/checkpoints/sentiment/{model_key}_seed{seed}")
         ckpt_dir.mkdir(parents=True, exist_ok=True)
         torch.save(best_head_state, ckpt_dir / "classifier_head.pt")
+        if best_model_state is not None:
+            torch.save(best_model_state, ckpt_dir / "model_fine_tuned.pt")
         from evaluation_suit.eval.common.io_utils import write_json
         write_json(ckpt_dir / "checkpoint_info.json", {
             "model": model_key,
             "task": "sentiment",
             "seed": seed,
+            "mode": "full_finetune" if model_key == "banglabert" else "lora_finetune",
             "test_macro_f1": round(test_f1, 4),
             "test_accuracy": round(test_acc, 4),
         })
-        print(f"  ✓ Fine-tuned head checkpoint saved to {ckpt_dir}")
+        print(f"  ✓ Fine-tuned model checkpoint saved to {ckpt_dir}")
 
     # Cleanup GPU memory
-    del loaded, head
+    del model_copy, head
     torch.cuda.empty_cache()
 
     return result

@@ -20,6 +20,8 @@ Usage:
 """
 
 import argparse
+import copy
+import logging
 import sys
 from pathlib import Path
 from typing import List, Tuple
@@ -278,16 +280,45 @@ def train_and_evaluate(
     val_loader = DataLoader(val_ds, batch_size=eff_batch_size, shuffle=False, num_workers=2)
     test_loader = DataLoader(test_ds, batch_size=eff_batch_size, shuffle=False, num_workers=2)
 
-    # Freeze base model
-    loaded.model.eval()
-    for param in loaded.model.parameters():
-        param.requires_grad = False
+    # Prepare isolated model copy for fine-tuning
+    model_copy = copy.deepcopy(loaded.model).to(device)
 
-    optimizer = torch.optim.AdamW(head.parameters(), lr=lr)
+    if model_key == "banglabert":
+        # Full End-to-End Fine-Tuning for BanglaBERT
+        for param in model_copy.parameters():
+            param.requires_grad = True
+        fine_tune_lr = lr  # Default 2e-5
+        logging.info(f"[{model_key}] Full End-to-End Fine-Tuning enabled (lr={fine_tune_lr})")
+    else:
+        # LoRA Fine-Tuning for Gamba & GSG
+        from peft import LoraConfig, get_peft_model
+        lora_config = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            target_modules="all-linear",
+            lora_dropout=0.05,
+        )
+        model_copy = get_peft_model(model_copy, lora_config)
+        fine_tune_lr = 1e-4 if lr == 2e-5 else lr  # Optimal LoRA lr
+        trainable = sum(p.numel() for p in model_copy.parameters() if p.requires_grad)
+        total = sum(p.numel() for p in model_copy.parameters())
+        logging.info(f"[{model_key}] LoRA Fine-Tuning enabled (lr={fine_tune_lr}, trainable={trainable:,}/{total:,})")
+
+    for param in head.parameters():
+        param.requires_grad = True
+
+    optimizer = torch.optim.AdamW(
+        list(filter(lambda p: p.requires_grad, model_copy.parameters())) + list(head.parameters()),
+        lr=fine_tune_lr,
+    )
+
+    # Training Loop
     best_val_f1 = 0.0
     best_head_state = None
+    best_model_state = None
 
     for epoch in range(epochs):
+        model_copy.train()
         head.train()
         total_loss = 0.0
         n_batches = 0
@@ -296,9 +327,10 @@ def train_and_evaluate(
             input_ids = batch["input_ids"].to(device)
             labels = batch["labels"].to(device)
 
-            with torch.no_grad():
-                with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
-                    hidden = get_hidden_states(loaded.model, input_ids, batch["attention_mask"].to(device), loaded.model_type)
+            optimizer.zero_grad()
+
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
+                hidden = get_hidden_states(model_copy, input_ids, batch["attention_mask"].to(device), loaded.model_type)
 
             logits = head(hidden.float())  # (B, T, num_labels)
             loss = F.cross_entropy(
@@ -307,7 +339,6 @@ def train_and_evaluate(
                 ignore_index=-100,
             )
 
-            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
@@ -317,6 +348,7 @@ def train_and_evaluate(
         avg_loss = total_loss / max(n_batches, 1)
 
         # Validation
+        model_copy.eval()
         head.eval()
         all_preds_seq = []
         all_labels_seq = []
@@ -326,7 +358,7 @@ def train_and_evaluate(
                 labels = batch["labels"]
 
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
-                    hidden = get_hidden_states(loaded.model, input_ids, batch["attention_mask"].to(device), loaded.model_type)
+                    hidden = get_hidden_states(model_copy, input_ids, batch["attention_mask"].to(device), loaded.model_type)
 
                 logits = head(hidden.float())
                 preds = logits.argmax(dim=-1).cpu().tolist()
@@ -339,12 +371,18 @@ def train_and_evaluate(
 
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
-            best_head_state = {k: v.clone() for k, v in head.state_dict().items()}
+            best_head_state = {k: v.clone().cpu() for k, v in head.state_dict().items()}
+            best_model_state = {k: v.clone().cpu() for k, v in model_copy.state_dict().items() if v.requires_grad}
 
-    # Test with best head
+    # Test with best head and model copy
     if best_head_state is not None:
-        head.load_state_dict(best_head_state)
+        head.load_state_dict({k: v.to(device) for k, v in best_head_state.items()})
+    if best_model_state is not None:
+        for k, v in best_model_state.items():
+            if k in model_copy.state_dict():
+                model_copy.state_dict()[k].copy_(v.to(device))
 
+    model_copy.eval()
     head.eval()
     all_preds_seq = []
     all_labels_seq = []
@@ -354,7 +392,7 @@ def train_and_evaluate(
             labels = batch["labels"]
 
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda" and loaded.model_type == "causal_lm")):
-                hidden = get_hidden_states(loaded.model, input_ids, batch["attention_mask"].to(device), loaded.model_type)
+                hidden = get_hidden_states(model_copy, input_ids, batch["attention_mask"].to(device), loaded.model_type)
 
             logits = head(hidden.float())
             preds = logits.argmax(dim=-1).cpu().tolist()
@@ -373,23 +411,25 @@ def train_and_evaluate(
         "dataset": dataset_name,
         "entity_f1": round(test_f1, 4),
         "best_val_f1": round(best_val_f1, 4),
-        "num_labels": num_labels,
-        "tag_schema": getattr(dataset, "_schema", "unknown"),
+        "num_tags": num_labels,
         "epochs": epochs,
-        "lr": lr,
+        "lr": fine_tune_lr,
         "batch_size": batch_size,
+        "mode": "full_finetune" if model_key == "banglabert" else "lora_finetune",
     }
     append_result(results_path, result)
     print(f"  Result appended to {results_path}")
 
-    # Save fine-tuned head checkpoint if requested
+    # Save fine-tuned checkpoint if requested
     if save_checkpoint and best_head_state is not None:
-        ckpt_dir = Path(f"evaluation_suit/checkpoints/ner/{model_key}_{dataset_name}_seed{seed}")
+        ckpt_dir = Path(f"evaluation_suit/checkpoints/ner/{dataset_name}/{model_key}_seed{seed}")
         ckpt_dir.mkdir(parents=True, exist_ok=True)
-        torch.save(best_head_state, ckpt_dir / "classifier_head.pt")
+        torch.save(best_head_state, ckpt_dir / "tagging_head.pt")
+        if best_model_state is not None:
+            torch.save(best_model_state, ckpt_dir / "model_fine_tuned.pt")
         from evaluation_suit.eval.common.io_utils import write_json
         write_json(ckpt_dir / "checkpoint_info.json", {
-            "model": model_key,
+            "model": run_key,
             "task": "ner",
             "dataset": dataset_name,
             "seed": seed,
