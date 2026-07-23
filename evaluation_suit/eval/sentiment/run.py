@@ -116,7 +116,7 @@ class SentimentDataset(Dataset):
 
 # ── Hidden State Extraction ──────────────────────────────────────────────────
 
-def get_hidden_states(model, input_ids, model_type, model_key):
+def get_hidden_states(model, input_ids, attention_mask, model_type, model_key):
     """
     Extract hidden states from base model for classification head.
 
@@ -127,14 +127,14 @@ def get_hidden_states(model, input_ids, model_type, model_key):
     # 1. Try return_hidden=True on inner or outer model
     if hasattr(inner, "forward"):
         try:
-            res = inner(input_ids, return_hidden=True)
+            res = inner(input_ids, attention_mask=attention_mask, return_hidden=True)
             if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
                 return res
         except Exception:
             pass
 
     try:
-        res = model(input_ids, return_hidden=True)
+        res = model(input_ids, attention_mask=attention_mask, return_hidden=True)
         if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
             return res
     except Exception:
@@ -152,7 +152,7 @@ def get_hidden_states(model, input_ids, model_type, model_key):
         return x
 
     # 3. Standard HF output_hidden_states
-    outputs = model(input_ids, output_hidden_states=True)
+    outputs = model(input_ids, attention_mask=attention_mask, output_hidden_states=True)
     if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
         return outputs.hidden_states[-1]
     if hasattr(outputs, "last_hidden_state") and outputs.last_hidden_state is not None:
@@ -245,7 +245,7 @@ def train_and_evaluate(
             with torch.no_grad():
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
                     hidden = get_hidden_states(
-                        loaded.model, input_ids, loaded.model_type, model_key
+                        loaded.model, input_ids, attn_mask, loaded.model_type, model_key
                     )
 
             logits = head(hidden.float(), attn_mask, loaded.model_type)
@@ -271,7 +271,7 @@ def train_and_evaluate(
 
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
                     hidden = get_hidden_states(
-                        loaded.model, input_ids, loaded.model_type, model_key
+                        loaded.model, input_ids, attn_mask, loaded.model_type, model_key
                     )
 
                 logits = head(hidden.float(), attn_mask, loaded.model_type)
@@ -301,7 +301,7 @@ def train_and_evaluate(
 
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
                 hidden = get_hidden_states(
-                    loaded.model, input_ids, loaded.model_type, model_key
+                    loaded.model, input_ids, attn_mask, loaded.model_type, model_key
                 )
 
             logits = head(hidden.float(), attn_mask, loaded.model_type)

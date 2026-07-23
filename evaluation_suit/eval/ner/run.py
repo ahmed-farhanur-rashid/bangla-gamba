@@ -165,20 +165,20 @@ class NERDataset(Dataset):
 
 # ── Hidden State Extraction (reused pattern) ─────────────────────────────────
 
-def get_hidden_states(model, input_ids, model_type):
+def get_hidden_states(model, input_ids, attention_mask, model_type):
     """Extract per-token hidden states from the base model."""
     inner = getattr(model, "model", model)
 
     if hasattr(inner, "forward"):
         try:
-            res = inner(input_ids, return_hidden=True)
+            res = inner(input_ids, attention_mask=attention_mask, return_hidden=True)
             if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
                 return res
         except Exception:
             pass
 
     try:
-        res = model(input_ids, return_hidden=True)
+        res = model(input_ids, attention_mask=attention_mask, return_hidden=True)
         if isinstance(res, torch.Tensor) and res.dim() == 3 and res.shape[-1] <= 4096:
             return res
     except Exception:
@@ -194,7 +194,7 @@ def get_hidden_states(model, input_ids, model_type):
         x = inner.final_norm(x)
         return x
 
-    outputs = model(input_ids, output_hidden_states=True)
+    outputs = model(input_ids, attention_mask=attention_mask, output_hidden_states=True)
     if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
         return outputs.hidden_states[-1]
     if hasattr(outputs, "last_hidden_state") and outputs.last_hidden_state is not None:
@@ -313,7 +313,7 @@ def train_and_evaluate(
 
             with torch.no_grad():
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
-                    hidden = get_hidden_states(loaded.model, input_ids, loaded.model_type)
+                    hidden = get_hidden_states(loaded.model, input_ids, batch["attention_mask"].to(device), loaded.model_type)
 
             logits = head(hidden.float())  # (B, T, num_labels)
             loss = F.cross_entropy(
@@ -341,7 +341,7 @@ def train_and_evaluate(
                 labels = batch["labels"]
 
                 with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
-                    hidden = get_hidden_states(loaded.model, input_ids, loaded.model_type)
+                    hidden = get_hidden_states(loaded.model, input_ids, batch["attention_mask"].to(device), loaded.model_type)
 
                 logits = head(hidden.float())
                 preds = logits.argmax(dim=-1).cpu().tolist()
@@ -369,7 +369,7 @@ def train_and_evaluate(
             labels = batch["labels"]
 
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
-                hidden = get_hidden_states(loaded.model, input_ids, loaded.model_type)
+                hidden = get_hidden_states(loaded.model, input_ids, batch["attention_mask"].to(device), loaded.model_type)
 
             logits = head(hidden.float())
             preds = logits.argmax(dim=-1).cpu().tolist()

@@ -131,7 +131,8 @@ def load_model(
             torch_dtype=dtype,
         )
     elif model_type == "masked_lm":
-        model = AutoModelForMaskedLM.from_pretrained(
+        from transformers import AutoModel
+        model = AutoModel.from_pretrained(
             hf_repo,
             trust_remote_code=trust_remote_code,
             torch_dtype=dtype if key != "banglabert" else torch.float32,
